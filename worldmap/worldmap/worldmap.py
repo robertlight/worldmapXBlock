@@ -39,6 +39,7 @@ class WorldMapXBlock(XBlock):
         html = self.resource_string("static/html/worldmap.html")
         frag = Fragment(html.format(self=self))
         frag.add_css(self.resource_string("static/css/worldmap.css"))
+        frag.add_javascript(unicode(pkg_resources.resource_string(__name__, "static/js/src/xBlockCom-master.js")))
         frag.add_javascript(self.resource_string("static/js/src/worldmap.js"))
         frag.initialize_js('WorldMapXBlock')
         return frag

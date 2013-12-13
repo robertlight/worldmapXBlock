@@ -1,5 +1,8 @@
 "use strict";
 
+/**
+ * This controls the messaging between the master page and the slaves within the various iframes on the page
+ */
 var MESSAGING = (function Messaging() { // declare 'Singleton' as the return value of a self-executing anonymous function
     var _instance = null;
     var _constructor = function() {
@@ -9,12 +12,8 @@ var MESSAGING = (function Messaging() { // declare 'Singleton' as the return val
     };
     _constructor.prototype = { // *** prototypes will be "public" methods available to the instance
         setClientCredentials: function( id, creds ) {
-    //       if( !this.clientCredentials[id] ) {
              this.clientCredentials[id] = creds;
              console.log("setClientCredentials: xblockId: "+id+" host: "+creds.clientHost+"   uniqueId: "+creds.uniqueClientId);
-    //       } else {
-    //         console.log("ERROR: no credentials found for id="+id);
-    //       }
         },
         addHandler: function(id, type, h) {
            if( !this.handlers[id] ) {
