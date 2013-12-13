@@ -1,0 +1,10 @@
+<div class="worldmap_block">
+<p>WorldMapXBlock: count is now
+    <span class='count'>{self.count}</span> (click me to increment).
+
+    <iframe class='frame' id='worldmap_{self.scope_ids.usage_id}' 
+     src="http://23.21.172.243/maps/bostoncensus/embed?xblockId=worldmap_{self.scope_ids.usage_id}"
+     frameborder='0' width=400 height=400></iframe>
+    <script> $(function() {{initializeWorldMap("worldmap_{self.scope_ids.usage_id}");}}) </script>
+</p>
+</div>

@@ -1,0 +1,9 @@
+/* CSS for WorldMapXBlock */
+
+.worldmap_block .count {
+    font-weight: bold;
+}
+
+.worldmap_block p {
+    cursor: pointer;
+}
