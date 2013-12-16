@@ -1,11 +1,13 @@
 """TO-DO: Write a description of what this XBlock is."""
 
 import pkg_resources
+import logging
 
 from xblock.core import XBlock
-from xblock.fields import Scope, Integer
+from xblock.fields import Scope, Integer, Any, String, Float
 from xblock.fragment import Fragment
 
+log = logging.getLogger(__name__)
 
 class WorldMapXBlock(XBlock):
     """
@@ -24,6 +26,15 @@ class WorldMapXBlock(XBlock):
         default=0, scope=Scope.user_state,
         help="The id of this worldmap on the page - needs to be unique page-wide",
     )
+
+    href = String(help="URL of the worldmap page at the provider", default=None, scope=Scope.content)
+    zoomLevel = Integer(help="zoom level of map", default=None, scope=Scope.user_state)
+    centerLat = Float(help="latitude of center of map", default=None, scope=Scope.user_state)
+    centerLon = Float(help="longitude of center of map", default=None, scope=Scope.user_state)
+    topLat    = Float(help="latitude of top of map", default=None, scope=Scope.user_state)
+    botLat    = Float(help="latitude of bottom of map", default=None, scope=Scope.user_state)
+    leftLong  = Float(help="longitude of west side of map", default=None, scope=Scope.user_state)
+    rightLong = Float(help="longitude of east side of map", default=None, scope=Scope.user_state)
 
     def resource_string(self, path):
         """Handy helper for getting resources from our kit."""
@@ -57,6 +68,20 @@ class WorldMapXBlock(XBlock):
         self.count += 1
         return {"count": self.count}
 
+
+    @XBlock.json_handler
+    def set_zoom_level(self, data, suffix=''):
+        """
+        Called when zoom level is changed
+        """
+        if not data.get('zoomLevel'):
+            log.warn('zoomLevel not found')
+        else:
+            self.zoomLevel = int(data.get('zoomLevel'))
+
+        return {'zoomLevel': self.zoomLevel}
+
+
     # TO-DO: change this to create the scenarios you'd like to see in the
     # workbench while developing your XBlock.
     @staticmethod
@@ -65,9 +90,9 @@ class WorldMapXBlock(XBlock):
         return [
             ("WorldMapXBlock",
              """<vertical_demo>
-                <worldmap/>
-                <worldmap/>
-                <worldmap/>
+                <worldmap href='http://23.21.172.243/maps/bostoncensus/embed?'/>
+                <worldmap href='http://23.21.172.243/maps/bostoncensus/embed?'/>
+                <worldmap href='http://23.21.172.243/maps/bostoncensus/embed?'/>
                 </vertical_demo>
              """
             ),
