@@ -35,7 +35,7 @@ var MESSAGING = (function Messaging() { // declare 'Singleton' as the return val
              try {
                 this.handlers[id][msg.getType()](msg);
              } catch (e) { // SECURITY: make sure we have a handler for this message type
-                throw "SecurityException: no handler for id: "+id+" for message type: "+msg.getType();
+                throw "SecurityException: no handler for id: "+id+" for message type: "+msg.getType()+" exception: "+e;
              }
           }
         },

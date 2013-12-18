@@ -1,4 +1,5 @@
 """TO-DO: Write a description of what this XBlock is."""
+import json
 
 import pkg_resources
 import logging
@@ -29,12 +30,8 @@ class WorldMapXBlock(XBlock):
 
     href = String(help="URL of the worldmap page at the provider", default=None, scope=Scope.content)
     zoomLevel = Integer(help="zoom level of map", default=None, scope=Scope.user_state)
-    centerLat = Float(help="latitude of center of map", default=None, scope=Scope.user_state)
-    centerLon = Float(help="longitude of center of map", default=None, scope=Scope.user_state)
-    topLat    = Float(help="latitude of top of map", default=None, scope=Scope.user_state)
-    botLat    = Float(help="latitude of bottom of map", default=None, scope=Scope.user_state)
-    leftLong  = Float(help="longitude of west side of map", default=None, scope=Scope.user_state)
-    rightLong = Float(help="longitude of east side of map", default=None, scope=Scope.user_state)
+    centerLat = Float(help="center of map (latitude)", default=None, scope=Scope.user_state)
+    centerLon = Float(help="center of map (longitude)", default=None, scope=Scope.user_state)
 
     def resource_string(self, path):
         """Handy helper for getting resources from our kit."""
@@ -48,6 +45,7 @@ class WorldMapXBlock(XBlock):
         when viewing courses.
         """
         html = self.resource_string("static/html/worldmap.html")
+
         frag = Fragment(html.format(self=self))
         frag.add_css(self.resource_string("static/css/worldmap.css"))
         frag.add_javascript(unicode(pkg_resources.resource_string(__name__, "static/js/src/xBlockCom-master.js")))
@@ -81,6 +79,20 @@ class WorldMapXBlock(XBlock):
 
         return {'zoomLevel': self.zoomLevel}
 
+    @XBlock.json_handler
+    def set_center(self, data, suffix=''):
+        """
+        Called when window zoomed/scrolled
+        """
+        if not data.get('centerLat'):
+            log.warn('centerLat not found')
+            return False
+        else:
+            self.centerLat = data.get('centerLat')
+            self.centerLon = data.get('centerLon')
+            self.zoomLevel = data.get('zoomLevel')
+
+        return True
 
     # TO-DO: change this to create the scenarios you'd like to see in the
     # workbench while developing your XBlock.

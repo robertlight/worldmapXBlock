@@ -9,8 +9,20 @@ function WorldMapXBlock(runtime, element) {
 
     MESSAGING.getInstance().addHandler(getUniqueId(),"info", function(m) { alert("info: "+m.getMessage()); });
     MESSAGING.getInstance().addHandler(getUniqueId(),"zoomend", function(m) { on_setZoomLevel(element, m.getMessage()); });
-    MESSAGING.getInstance().addHandler(getUniqueId(),"moveend", function(m) { alert("moveend: "+JSON.stringify(m.getMessage())); });
+    MESSAGING.getInstance().addHandler(getUniqueId(),"moveend", function(m) { on_setCenter(element, m.getMessage()); });
 
+    MESSAGING.getInstance().addHandler(getUniqueId(),"portalReady", function(m) {
+       if( $('.frame', element).attr('centerLat') != 'None' ) {
+           MESSAGING.getInstance().send(
+               getUniqueId(),
+               new Message("setCenter", {
+                   zoomLevel: $('.frame', element).attr('zoomLevel'),
+                   centerLat: $('.frame', element).attr('centerLat'),
+                   centerLon: $('.frame', element).attr('centerLon')
+               })
+           );
+       }
+    });
     function getUniqueId() {
         return $('.frame', element).attr('id');
     }
@@ -24,8 +36,23 @@ function WorldMapXBlock(runtime, element) {
             url: runtime.handlerUrl(el, 'set_zoom_level'),
             data: JSON.stringify({zoomLevel: level}),
             success: function(result) {
-                var id = $('.frame', el).attr('id');
-                alert("zoomlevel of "+id+" successfully changed to: "+result.zoomLevel);
+//                var id = $('.frame', el).attr('id');
+//                alert("zoomlevel of "+id+" successfully changed to: "+result.zoomLevel);
+            }
+        });
+    }
+    function on_setCenter(el, json) {
+        var data = JSON.parse(json);
+        $.ajax({
+            type: "POST",
+            url: runtime.handlerUrl(el, 'set_center'),
+            data: JSON.stringify({centerLat: data.center.lat,  centerLon: data.center.lon, zoomLevel:data.zoomLevel}),
+            success: function(result) {
+                if( !result ) {
+                    alert("Failed to setCenter for map: "+$('.frame', el).attr('id'));
+                }
+//                var id = $('.frame', el).attr('id');
+//                alert("viewLimits of "+id+" successfully changed to: "+result.viewLimits);
             }
         });
     }
