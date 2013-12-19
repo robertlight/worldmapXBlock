@@ -1,7 +1,5 @@
 <div class="worldmap_block">
-<p>WorldMapXBlock: count is now
-    <span class='count'>{self.count}</span> (click me to increment).
-
+<p>
     <iframe class='frame' id='worldmap_{self.scope_ids.usage_id}' 
      src="{self.href}xblockId=worldmap_{self.scope_ids.usage_id}"
      frameborder='0' width=400 height=400
@@ -9,6 +7,7 @@
      centerLat="{self.centerLat}"
      centerLon="{self.centerLon}"
     ></iframe>
+    <div style='visibility:hidden' class="layerData" id='layerdata_{self.scope_ids.usage_id}'>{layerData}</div>
 <!--  we don't have to do this hack
     <script>
         //need to get this called once for each worldmap xblock

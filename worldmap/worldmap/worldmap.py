@@ -3,9 +3,10 @@ import json
 
 import pkg_resources
 import logging
+import threading
 
 from xblock.core import XBlock
-from xblock.fields import Scope, Integer, Any, String, Float
+from xblock.fields import Scope, Integer, Any, String, Float, Dict
 from xblock.fragment import Fragment
 
 log = logging.getLogger(__name__)
@@ -14,15 +15,11 @@ class WorldMapXBlock(XBlock):
     """
     A testing block that checks the behavior of the container.
     """
+    threadLock = threading.Lock()
 
     # Fields are defined on the class.  You can access them in your code as
     # self.<fieldname>.
 
-    # TO-DO: delete count, and define your own fields.
-    count = Integer(
-        default=0, scope=Scope.user_state,
-        help="A simple counter, to show something happening",
-    )
     worldmapId = Integer(
         default=0, scope=Scope.user_state,
         help="The id of this worldmap on the page - needs to be unique page-wide",
@@ -32,6 +29,8 @@ class WorldMapXBlock(XBlock):
     zoomLevel = Integer(help="zoom level of map", default=None, scope=Scope.user_state)
     centerLat = Float(help="center of map (latitude)", default=None, scope=Scope.user_state)
     centerLon = Float(help="center of map (longitude)", default=None, scope=Scope.user_state)
+
+    layers = Dict(help="layer properties", default=None, scope=Scope.user_state)
 
     def resource_string(self, path):
         """Handy helper for getting resources from our kit."""
@@ -46,25 +45,15 @@ class WorldMapXBlock(XBlock):
         """
         html = self.resource_string("static/html/worldmap.html")
 
-        frag = Fragment(html.format(self=self))
+        layerData = "{}"
+        if self.layers != None:
+            layerData = json.dumps(self.layers)
+        frag = Fragment(html.format(self=self, layerData=layerData))
         frag.add_css(self.resource_string("static/css/worldmap.css"))
         frag.add_javascript(unicode(pkg_resources.resource_string(__name__, "static/js/src/xBlockCom-master.js")))
         frag.add_javascript(self.resource_string("static/js/src/worldmap.js"))
         frag.initialize_js('WorldMapXBlock')
         return frag
-
-    # TO-DO: change this handler to perform your own actions.  You may need more
-    # than one handler, or you may not need any handlers at all.
-    @XBlock.json_handler
-    def increment_count(self, data, suffix=''):
-        """
-        An example handler, which increments the data.
-        """
-        # Just to show data coming in...
-        assert data['hello'] == 'world'
-
-        self.count += 1
-        return {"count": self.count}
 
 
     @XBlock.json_handler
@@ -78,6 +67,24 @@ class WorldMapXBlock(XBlock):
             self.zoomLevel = int(data.get('zoomLevel'))
 
         return {'zoomLevel': self.zoomLevel}
+
+    @XBlock.json_handler
+    def change_layer_properties(self, data, suffix=''):
+        """
+        Called when layer properties have changed
+        """
+        id = data.get('id')
+        if not id:
+            log.warn('no layerProperties found')
+            return False
+        else:
+            # we have a threading problem... need to behave in single-threaded mode here
+            self.threadLock.acquire()
+            if self.layers == None:
+                self.layers = {}
+            self.layers[id] = {'name': data.get("name"),  'opacity': data.get("opacity"), 'visibility': data.get("visibility")}
+            self.threadLock.release()
+        return True
 
     @XBlock.json_handler
     def set_center(self, data, suffix=''):

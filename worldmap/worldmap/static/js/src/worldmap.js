@@ -10,6 +10,7 @@ function WorldMapXBlock(runtime, element) {
     MESSAGING.getInstance().addHandler(getUniqueId(),"info", function(m) { alert("info: "+m.getMessage()); });
     MESSAGING.getInstance().addHandler(getUniqueId(),"zoomend", function(m) { on_setZoomLevel(element, m.getMessage()); });
     MESSAGING.getInstance().addHandler(getUniqueId(),"moveend", function(m) { on_setCenter(element, m.getMessage()); });
+    MESSAGING.getInstance().addHandler(getUniqueId(),"changelayer", function(m) { on_changeLayer(element, m.getMessage()); });
 
     MESSAGING.getInstance().addHandler(getUniqueId(),"portalReady", function(m) {
        if( $('.frame', element).attr('centerLat') != 'None' ) {
@@ -22,12 +23,17 @@ function WorldMapXBlock(runtime, element) {
                })
            );
        }
+       if( $('.layerData',element).text() != "{}" ) {
+           MESSAGING.getInstance().send(
+               getUniqueId(),
+               new Message("setLayers", $('.layerData',element).text())
+           );
+       } else {
+           console.log("no setLayers message sent, DOM info: "+$('.layerData',element).text());
+       }
     });
     function getUniqueId() {
         return $('.frame', element).attr('id');
-    }
-    function updateCount(result) {
-        $('.count', element).text(result.count);
     }
 
     function on_setZoomLevel(el, level) {
@@ -56,17 +62,19 @@ function WorldMapXBlock(runtime, element) {
             }
         });
     }
-
-    var handlerUrl = runtime.handlerUrl(element, 'increment_count');
-
-    $('p', element).click(function(eventObject) {
+    function on_changeLayer(el, json) {
         $.ajax({
             type: "POST",
-            url: handlerUrl,
-            data: JSON.stringify({"hello": "world"}),
-            success: updateCount
+            url: runtime.handlerUrl(el, 'change_layer_properties'),
+            data: json,
+            success: function(result) {
+                if( !result ) {
+                    alert("Failed to change layer for map: "+$('.frame', el).attr('id'));
+                }
+            }
         });
-    });
+    }
+
 
     $(function ($) {
         /* Here's where you'd do things on page load. */
