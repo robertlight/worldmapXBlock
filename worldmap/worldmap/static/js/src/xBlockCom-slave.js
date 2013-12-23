@@ -85,7 +85,7 @@ var MESSAGING = (function Messaging() { // declare 'Singleton' as the return val
                  console.log("WARNING: Message ignored by slave  -  message type: "+data.type+",  isMasterSlave: "+this.isMasterSlave);
               }
            } catch(e) {  
-              console.log("ERROR:  SLAVE THREW EXCEPTION WHEN HANDLING MESSAGE: "+e);
+              console.log("ERROR:  SLAVE THREW EXCEPTION WHEN HANDLING MESSAGE: "+e+"\nevent.data="+event.data);
            }
         }
     };
