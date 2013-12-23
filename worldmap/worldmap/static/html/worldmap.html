@@ -6,13 +6,8 @@
      zoomLevel='{self.zoomLevel}'
      centerLat="{self.centerLat}"
      centerLon="{self.centerLon}"
-    ></iframe>
+    ></iframe><br/>
+    slider:<div class="slider" id='slider_{self.scope_ids.usage_id}'></div>
     <div style='visibility:hidden' class="layerData" id='layerdata_{self.scope_ids.usage_id}'>{layerData}</div>
-<!--  we don't have to do this hack
-    <script>
-        //need to get this called once for each worldmap xblock
-        window.addEventListener('DOMContentLoaded', function() {{initializeWorldMap("worldmap_{self.scope_ids.usage_id}");}}, false);
-    </script>
--->
 </p>
 </div>

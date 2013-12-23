@@ -32,6 +32,7 @@ function WorldMapXBlock(runtime, element) {
            console.log("no setLayers message sent, DOM info: "+$('.layerData',element).text());
        }
     });
+
     function getUniqueId() {
         return $('.frame', element).attr('id');
     }
@@ -78,11 +79,17 @@ function WorldMapXBlock(runtime, element) {
 
     $(function ($) {
         /* Here's where you'd do things on page load. */
+        $( '.slider', element ).slider({
+            value: 0,
+            min: 0,
+            max: 24,
+            step: 1,
+            slide: function(event, ui) {
+                console.log('slide: ui='+ui.value);
+            }
+        });
     });
 }
 
-function initializeWorldMap(id) {
-   alert("initializing worldmap: id="+id);
-}
 
 
