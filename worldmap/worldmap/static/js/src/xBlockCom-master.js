@@ -32,10 +32,14 @@ var MESSAGING = (function Messaging() { // declare 'Singleton' as the return val
           if( cred.uniqueClientId != uniqId ) {  //SECURITY: make sure we've received credentials from this client
              throw "SecurityException: bad uniqueId("+uniqId+") for clientId: "+id+". Should be: "+this.clientCredentials[id].uniqueClientId;
           } else {
-             try {
-                this.handlers[id][msg.getType()](msg);
-             } catch (e) { // SECURITY: make sure we have a handler for this message type
-                throw "SecurityException: no handler for id: "+id+" for message type: "+msg.getType()+" exception: "+e;
+             if( this.handlers[id][msg.getType()] ) {
+                 try {
+                    this.handlers[id][msg.getType()](msg);
+                 } catch (e) { // SECURITY: make sure we have a handler for this message type
+                    throw "SecurityException: in handler for id: "+id+" for message type: "+msg.getType()+" exception: "+e;
+                 }
+             } else {
+                 throw "No handler found for id: "+id+" for message type: "+msg.getType();
              }
           }
         },

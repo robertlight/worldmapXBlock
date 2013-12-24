@@ -65,25 +65,26 @@ function WorldMapXBlock(runtime, element) {
     }
     function on_changeLayer(el, json) {
         var layer = JSON.parse(json);
-        console.log("layer: id="+layer.id+",  name="+layer.name+",  visible="+layer.visibility+",  opacity="+layer.opacity);
+        //console.log("layer: id="+layer.id+",  name="+layer.name+",  visible="+layer.visibility+",  opacity="+layer.opacity);
         var id = "layerOpacityCtrl_"+getUniqueId()+"_"+layer.id;
         if( $('#'+id,el).length == 0 && layer.visibility ) {
+            //console.log("Creating control for id: "+layer.id);
             var opacityControls = $(".opacityControls",el);
             var ctrl = $(".opacityTemplate",el).clone();
-            console.log("#matching="+ctrl.length);
             ctrl.attr("id",id);
             ctrl.removeClass("hidden");
             ctrl.removeClass("opacityTemplate");
             $('.layerName',ctrl).text(layer.name);
             $('.slider',ctrl).slider({
-                value: 0,
+                value: layer.opacity,
                 min: 0,
                 max: 1,
                 step: .01,
+                animate: "fast",
                 slide: function(event, ui) {
                     layer.opacity = ui.value;
                     var newJson = JSON.stringify(layer);
-                    console.log('slide: ui='+ui.value+"  for element: "+getUniqueId());
+                    console.log('slide handler: ui='+ui.value+"  for element: "+getUniqueId());
 
                     MESSAGING.getInstance().send(
                         getUniqueId(),
@@ -103,9 +104,9 @@ function WorldMapXBlock(runtime, element) {
             });
             ctrl.appendTo(opacityControls);
         } else if( !layer.visibility && $('#'+id,el).length > 0 ) {
+          //  console.log("Removing control for id: "+layer.id);
             $('#'+id,el).remove();
         }
-
         $.ajax({
             type: "POST",
             url: runtime.handlerUrl(el, 'change_layer_properties'),
@@ -121,15 +122,6 @@ function WorldMapXBlock(runtime, element) {
 
     $(function ($) {
         /* Here's where you'd do things on page load. */
-//        $( '.slider', element ).slider({
-//            value: 0,
-//            min: 0,
-//            max: 24,
-//            step: 1,
-//            slide: function(event, ui) {
-//                console.log('slide: ui='+ui.value+"  for element: "+getUniqueId());
-//            }
-//        });
     });
 }
 
