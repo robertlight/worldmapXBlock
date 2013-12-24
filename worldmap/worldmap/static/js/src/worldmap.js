@@ -64,13 +64,55 @@ function WorldMapXBlock(runtime, element) {
         });
     }
     function on_changeLayer(el, json) {
+        var layer = JSON.parse(json);
+        console.log("layer: id="+layer.id+",  name="+layer.name+",  visible="+layer.visibility+",  opacity="+layer.opacity);
+        var id = "layerOpacityCtrl_"+getUniqueId()+"_"+layer.id;
+        if( $('#'+id,el).length == 0 && layer.visibility ) {
+            var opacityControls = $(".opacityControls",el);
+            var ctrl = $(".opacityTemplate",el).clone();
+            console.log("#matching="+ctrl.length);
+            ctrl.attr("id",id);
+            ctrl.removeClass("hidden");
+            ctrl.removeClass("opacityTemplate");
+            $('.layerName',ctrl).text(layer.name);
+            $('.slider',ctrl).slider({
+                value: 0,
+                min: 0,
+                max: 1,
+                step: .01,
+                slide: function(event, ui) {
+                    layer.opacity = ui.value;
+                    var newJson = JSON.stringify(layer);
+                    console.log('slide: ui='+ui.value+"  for element: "+getUniqueId());
+
+                    MESSAGING.getInstance().send(
+                        getUniqueId(),
+                        new Message("setLayers", JSON.stringify(JSON.parse("{\""+layer.id+"\":"+JSON.stringify(layer)+"}")))
+                    );
+                    $.ajax({
+                        type: "POST",
+                        url: runtime.handlerUrl(el, 'change_layer_properties'),
+                        data: newJson,
+                        success: function(result) {
+                            if( !result ) {
+                                console.log("Failed to change layer for map: "+$('.frame', el).attr('id'));
+                            }
+                        }
+                    });
+                }
+            });
+            ctrl.appendTo(opacityControls);
+        } else if( !layer.visibility && $('#'+id,el).length > 0 ) {
+            $('#'+id,el).remove();
+        }
+
         $.ajax({
             type: "POST",
             url: runtime.handlerUrl(el, 'change_layer_properties'),
             data: json,
             success: function(result) {
                 if( !result ) {
-                    alert("Failed to change layer for map: "+$('.frame', el).attr('id'));
+                    console.log("Failed to change layer for map: "+$('.frame', el).attr('id'));
                 }
             }
         });
@@ -79,15 +121,15 @@ function WorldMapXBlock(runtime, element) {
 
     $(function ($) {
         /* Here's where you'd do things on page load. */
-        $( '.slider', element ).slider({
-            value: 0,
-            min: 0,
-            max: 24,
-            step: 1,
-            slide: function(event, ui) {
-                console.log('slide: ui='+ui.value);
-            }
-        });
+//        $( '.slider', element ).slider({
+//            value: 0,
+//            min: 0,
+//            max: 24,
+//            step: 1,
+//            slide: function(event, ui) {
+//                console.log('slide: ui='+ui.value+"  for element: "+getUniqueId());
+//            }
+//        });
     });
 }
 

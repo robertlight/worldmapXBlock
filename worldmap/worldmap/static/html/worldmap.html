@@ -1,13 +1,22 @@
 <div class="worldmap_block">
 <p>
-    <iframe class='frame' id='worldmap_{self.scope_ids.usage_id}' 
-     src="{self.href}xblockId=worldmap_{self.scope_ids.usage_id}"
-     frameborder='0' width=400 height=400
-     zoomLevel='{self.zoomLevel}'
-     centerLat="{self.centerLat}"
-     centerLon="{self.centerLon}"
-    ></iframe><br/>
-    slider:<div class="slider" id='slider_{self.scope_ids.usage_id}'></div>
-    <div style='visibility:hidden' class="layerData" id='layerdata_{self.scope_ids.usage_id}'>{layerData}</div>
+  <table border="0"><tr><td>
+        <iframe class='frame' id='worldmap_{self.scope_ids.usage_id}'
+         src="{self.href}xblockId=worldmap_{self.scope_ids.usage_id}"
+         frameborder='0' width=400 height=400
+         zoomLevel='{self.zoomLevel}'
+         centerLat="{self.centerLat}"
+         centerLon="{self.centerLon}"
+        ></iframe>
+    </td>
+    <td width='300'>
+    <div class="opacityControls" styl="padding:20px;"></div>
+    </td></tr>
+  </table>
+    <div class="hidden opacityTemplate">
+        <div class="layerName" style="padding-top:15px;"></div>
+        <div class="slider"></div>
+    </div>
+    <div class="hidden layerData" id='layerdata_{self.scope_ids.usage_id}'>{layerData}</div>
 </p>
 </div>

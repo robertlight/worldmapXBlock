@@ -7,3 +7,7 @@
 .worldmap_block p {
     cursor: pointer;
 }
+
+.hidden {
+    visibility: hidden;
+}
