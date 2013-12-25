@@ -6,7 +6,7 @@ import logging
 import threading
 
 from xblock.core import XBlock
-from xblock.fields import Scope, Integer, Any, String, Float, Dict
+from xblock.fields import Scope, Integer, Any, String, Float, Dict, Boolean
 from xblock.fragment import Fragment
 
 log = logging.getLogger(__name__)
@@ -26,6 +26,7 @@ class WorldMapXBlock(XBlock):
     )
 
     href = String(help="URL of the worldmap page at the provider", default=None, scope=Scope.content)
+    opacityControls = Boolean(help="include opacity control sliders", default=True, scope=Scope.content)
     zoomLevel = Integer(help="zoom level of map", default=None, scope=Scope.user_state)
     centerLat = Float(help="center of map (latitude)", default=None, scope=Scope.user_state)
     centerLon = Float(help="center of map (longitude)", default=None, scope=Scope.user_state)
@@ -115,7 +116,8 @@ class WorldMapXBlock(XBlock):
             ("WorldMapXBlock",
              """
                 <vertical_demo>
-                <worldmap href='http://23.21.172.243/maps/bostoncensus/embed?'/>
+                <worldmap href='http://23.21.172.243/maps/bostoncensus/embed?' opacityControls='false'/>
+                <worldmap href='http://23.21.172.243/maps/bostoncensus/embed?' opacityControls='true'/>
                 </vertical_demo>
              """
             ),
