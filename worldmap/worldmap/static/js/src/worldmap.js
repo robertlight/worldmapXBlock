@@ -11,6 +11,7 @@ function WorldMapXBlock(runtime, element) {
     MESSAGING.getInstance().addHandler(getUniqueId(),"zoomend", function(m) { on_setZoomLevel(element, m.getMessage()); });
     MESSAGING.getInstance().addHandler(getUniqueId(),"moveend", function(m) { on_setCenter(element, m.getMessage()); });
     MESSAGING.getInstance().addHandler(getUniqueId(),"changelayer", function(m) { on_changeLayer(element, m.getMessage()); });
+    MESSAGING.getInstance().addHandler(getUniqueId(),"click", function(m) { on_click(element, m.getMessage()); });
 
     MESSAGING.getInstance().addHandler(getUniqueId(),"portalReady", function(m) {
        if( $('.frame', element).attr('centerLat') != 'None' ) {
@@ -37,6 +38,18 @@ function WorldMapXBlock(runtime, element) {
         return $('.frame', element).attr('id');
     }
 
+    function on_click(el, location) {
+        $.ajax({
+            type: "POST",
+            url: runtime.handlerUrl(el, 'test_click'),
+            data: location,
+            success: function(result) {
+                if( result.hit ) {
+                    alert("Congratulations - you found it");
+                }
+            }
+        });
+    }
     function on_setZoomLevel(el, level) {
         $.ajax({
             type: "POST",

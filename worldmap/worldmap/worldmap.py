@@ -4,6 +4,7 @@ import json
 import pkg_resources
 import logging
 import threading
+import math
 
 from xblock.core import XBlock
 from xblock.fields import Scope, Integer, Any, String, Float, Dict, Boolean
@@ -26,6 +27,11 @@ class WorldMapXBlock(XBlock):
     )
 
     href = String(help="URL of the worldmap page at the provider", default=None, scope=Scope.content)
+
+    testLatitude = Float(help="latitude of test location point", default=None)
+    testLongitude= Float(help="longitude of test location point", default=None)
+    testRadius   = Float(help="acceptable hit radius (meters)",default=10000)
+
     opacityControls = Boolean(help="include opacity control sliders", default=True, scope=Scope.content)
     zoomLevel = Integer(help="zoom level of map", default=None, scope=Scope.user_state)
     centerLat = Float(help="center of map (latitude)", default=None, scope=Scope.user_state)
@@ -61,6 +67,32 @@ class WorldMapXBlock(XBlock):
         frag.initialize_js('WorldMapXBlock')
         return frag
 
+    problem_view = student_view
+
+    #Radius of earth is approx 6371km
+   # DEG_PER_KM = 360./(2*6371*math.pi)
+    SPHERICAL_DEFAULT_RADIUS = 6378137; #Meters
+
+    @XBlock.json_handler
+    def test_click(self, data, suffix=''):
+        """
+        Called when user clicks
+        """
+        isHit=False
+        if self.testLatitude != None:
+            if not data.get('y'):
+               log.warn('latitude not found')
+            else:
+               latitude = float(data.get('y'))
+               longitude= float(data.get('x'))
+               dLatitude= latitude - self.testLatitude
+               dLongitude=longitude - self.testLongitude
+               sinHalfDeltaLon = math.sin(math.pi * (self.testLongitude-longitude)/360)
+               sinHalfDeltaLat = math.sin(math.pi * (self.testLatitude-latitude)/360)
+               a = sinHalfDeltaLat * sinHalfDeltaLat + sinHalfDeltaLon*sinHalfDeltaLon * math.cos(math.pi*latitude/180)*math.cos(math.pi*self.testLatitude/180)
+               isHit = 2*self.SPHERICAL_DEFAULT_RADIUS*math.atan2(math.sqrt(a), math.sqrt(1-a)) < self.testRadius
+
+        return {'hit': isHit}
 
     @XBlock.json_handler
     def set_zoom_level(self, data, suffix=''):
@@ -117,7 +149,14 @@ class WorldMapXBlock(XBlock):
              """
                 <vertical_demo>
                 <worldmap href='http://23.21.172.243/maps/bostoncensus/embed?' opacityControls='false'/>
-                <worldmap href='http://23.21.172.243/maps/bostoncensus/embed?' opacityControls='true'/>
+
+                <problem_demo>
+                    <html_demo>
+                        <p>Please click on the location of <i>Timbuktu</i></p>
+                    </html_demo>
+
+                    <worldmap name='worldmap' href='http://23.21.172.243/maps/bostoncensus/embed?' opacityControls='true' testLatitude='16.775800549402906' testLongitude='-3.0166396836062104' testRadius='10000'/>
+                </problem_demo>
                 </vertical_demo>
              """
             ),
