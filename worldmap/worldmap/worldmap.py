@@ -216,17 +216,17 @@ class WorldMapXBlock(XBlock):
                       <layer-control layerid="OpenLayers_Layer_WMS_122" visible="true" name="layerA"/>
                       <layer-control layerid="OpenLayers_Layer_WMS_124" visible="true" name="layerB"/>
                       <layer-control layerid="OpenLayers_Layer_WMS_120" visible="false" name="layerC"/>
-                      <layer-control layerid="OpenLayers_Layer_Bing_92" visible="false" name="layerD"/>
+                    """
+                    #  <layer-control layerid="OpenLayers_Layer_Bing_92" visible="false" name="layerD"/>
+                    +"""
                       <layer-control layerid="OpenLayers_Layer_WMS_118" visible="true" name="layerE"/>
                       <layer-control layerid="OpenLayers_Layer_Vector_132" visible="true" name="layerF"/>
                       <group-control name="A sub group of layers">
                          <group-control name="A sub-sub-group">
-                            <layer-control layerid="OpenLayers_Layer_Bing_92" visible="true" name="layerD.1"/>
                             <layer-control layerid="OpenLayers_Layer_WMS_118" visible="true" name="layerE.1"/>
                             <layer-control layerid="OpenLayers_Layer_Vector_132" visible="true" name="layerF.1"/>
                          </group-control>
                          <group-control name="another sub-sub-group" visible="false">
-                            <layer-control layerid="OpenLayers_Layer_Bing_92" visible="true" name="layerD.2"/>
                             <layer-control layerid="OpenLayers_Layer_WMS_118" visible="true" name="layerE.2"/>
                             <layer-control layerid="OpenLayers_Layer_Vector_132" visible="true" name="layerF.2"/>
                          </group-control>
@@ -360,11 +360,9 @@ class LayerControlBlock(XBlock):
     student_view = problem_view
 
     def renderToDynatree(self):
-        node = { 'title': self.name }
+        node = { 'title': self.name, 'key': self.layerid }
         if( self.visible == False ):
             node['hidden'] = True
-            #node['addClass'] = "dynatree-hidden"
-            #node['hideCheckbox'] = True
         return node
 
 class GroupControlBlock(LayerControlBlock):

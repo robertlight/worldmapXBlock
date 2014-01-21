@@ -61,23 +61,38 @@ function WorldMapXBlock(runtime, element) {
                        id: $('.frame', element).attr('id')
                    })
             },
-        	ajaxDefaults: null
-
-//            ,children: [
-//                {title: "Item 1"},
-//                {title: "Folder 2", isFolder: true,
-//                  children: [
-//                    {title: "Sub-item 2.1"},
-//                    {title: "Sub-item 2.2"}
-//                  ]
-//                },
-//                {title: "Item 3"}
-//            ]
+        	ajaxDefaults: null,
+            onSelect: function(select, node) {
+                if( node.data.isFolder ) {
+                    selectFolder(select,node.data);
+                } else {
+                    selectLayer(select,node.data.key);
+                }
+            }
         });
 
     });
 
 
+    function selectFolder(select,node) {
+        for( var i=0; i<node.children.length; i++) {
+            var childNode = node.children[i];
+            if( childNode.isFolder ) {
+                selectFolder(select,childNode);
+            } else {
+                selectLayer(select,childNode.key);
+            }
+        }
+    }
+    function selectLayer(select,layerid) {
+        var layer = {opacity:1.0, visibility:select};
+        var layerData = JSON.stringify(JSON.parse("{\""+layerid+"\":"+JSON.stringify(layer)+"}"));
+       // var layerData = JSON.parse('{"'+layerid+'": {"opacity":1.0, "visibility":"'+select+'}}');
+        MESSAGING.getInstance().send(
+            getUniqueId(),
+            new Message('setLayers', layerData)
+        );
+    }
     function getUniqueId() {
         return $('.frame', element).attr('id');
     }
