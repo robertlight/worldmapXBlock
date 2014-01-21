@@ -1,0 +1,44 @@
+                <worldmap href='http://23.21.172.243/maps/bostoncensus/embed?' opacityControls='false'>
+                   <layers>
+                      <layer id="OpenLayers_Layer_WMS_122">
+                         <param name="CensusYear" value="1972"/>
+                      </layer>
+                      <layer id="OpenLayers_Layer_WMS_124">
+                         <param name="CensusYear" value="1974"/>
+                      </layer>
+                      <layer id="OpenLayers_Layer_WMS_120">
+                         <param name="CensusYear" value="1976"/>
+                      </layer>
+                      <layer id="OpenLayers_Layer_Bing_92">
+                         <param name="CensusYear" value="1978"/>
+                      </layer>
+                      <layer id="OpenLayers_Layer_WMS_118">
+                         <param name="CensusYear" value="1980"/>
+                      </layer>
+                      <layer id="OpenLayers_Layer_Vector_132">
+                         <param name="CensusYear" value="1982"/>
+                      </layer>
+                   </layers>
+                   <group-control name="Census Data" visible="true">
+                      <layer-control layerid="OpenLayers_Layer_WMS_122" visible="true" name="layerA"/>
+                      <layer-control layerid="OpenLayers_Layer_WMS_124" visible="true" name="layerB"/>
+                      <layer-control layerid="OpenLayers_Layer_WMS_120" visible="true" name="layerC"/>
+                      <layer-control layerid="OpenLayers_Layer_Bing_92" visible="true" name="layerD"/>
+                      <layer-control layerid="OpenLayers_Layer_WMS_118" visible="true" name="layerE"/>
+                      <layer-control layerid="OpenLayers_Layer_Vector_132" visible="true" name="layerF"/>
+                      <group-control name="A sub group of layers">
+                         <group-control name="A sub-sub-group">
+                            <layer-control layerid="OpenLayers_Layer_Bing_92" visible="true" name="layerD.1"/>
+                            <layer-control layerid="OpenLayers_Layer_WMS_118" visible="true" name="layerE.1"/>
+                            <layer-control layerid="OpenLayers_Layer_Vector_132" visible="true" name="layerF.1"/>
+                         </group-control>
+                         <group-control name="another sub-sub-group">
+                            <layer-control layerid="OpenLayers_Layer_Bing_92" visible="true" name="layerD.2"/>
+                            <layer-control layerid="OpenLayers_Layer_WMS_118" visible="true" name="layerE.2"/>
+                            <layer-control layerid="OpenLayers_Layer_Vector_132" visible="true" name="layerF.2"/>
+                         </group-control>
+                         <layer-control layerid="OpenLayers_Layer_WMS_122" visible="true" name="layerA.1"/>
+                         <layer-control layerid="OpenLayers_Layer_WMS_124" visible="true" name="layerB.1"/>
+                      </group-control>
+                   </group-control>
+                </worldmap>

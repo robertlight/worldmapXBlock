@@ -14,7 +14,7 @@ function WorldMapXBlock(runtime, element) {
     MESSAGING.getInstance().addHandler(getUniqueId(),"click", function(m) { on_click(element, m.getMessage()); });
 
     MESSAGING.getInstance().addHandler(getUniqueId(),"portalReady", function(m) {
-       if( $('.frame', element).attr('centerLat') != 'None' ) {
+        if( $('.frame', element).attr('centerLat') != 'None' ) {
            MESSAGING.getInstance().send(
                getUniqueId(),
                new Message("setCenter", {
@@ -23,16 +23,60 @@ function WorldMapXBlock(runtime, element) {
                    centerLon: $('.frame', element).attr('centerLon')
                })
            );
-       }
-       if( $('.layerData',element).text() != "{}" ) {
-           MESSAGING.getInstance().send(
-               getUniqueId(),
-               new Message("setLayers", $('.layerData',element).text())
-           );
-       } else {
-           console.log("no setLayers message sent, DOM info: "+$('.layerData',element).text());
-       }
+        }
+//        if( $('.layerData',element).text() != "{}" ) {
+//           MESSAGING.getInstance().send(
+//               getUniqueId(),
+//               new Message("setLayers", $('.layerData',element).text())
+//           );
+//        } else {
+//           console.log("no setLayers message sent, DOM info: "+$('.layerData',element).text());
+//        }
+
+
+        $('.layerControls',element).dynatree({
+            title: "LayerControls",
+//            minExpandLevel: 1, // 1=rootnote not collapsible
+            imagePath: 'static/js/vendor/dynatree/skin/',
+//            autoFocus:true,
+//            keyboard: true,
+//            persist: true,
+//            autoCollapse: false,
+//            clickFolderMode: 3, //1:activate, 2:expand, 3: activate+expand
+//            activeVisible: true, // make sure, active nodes are visible (expand)
+            checkbox: true,
+            selectMode: 3,
+//            fx: null, // or  {height: "toggle", duration:200 }
+//            noLink: true,
+            debugLevel: 2, // 0:quiet, 1:normal, 2:debug
+            onRender: function(node, nodeSpan) {
+                $(nodeSpan).find('.dynatree-icon').remove();
+            },
+            initAjax: {
+                   type: "POST",
+                   url: runtime.handlerUrl(element, 'layerTree'),
+                   data: JSON.stringify({
+                       key: "root", // Optional arguments to append to the url
+                       mode: "all",
+                       id: $('.frame', element).attr('id')
+                   })
+            },
+        	ajaxDefaults: null
+
+//            ,children: [
+//                {title: "Item 1"},
+//                {title: "Folder 2", isFolder: true,
+//                  children: [
+//                    {title: "Sub-item 2.1"},
+//                    {title: "Sub-item 2.2"}
+//                  ]
+//                },
+//                {title: "Item 3"}
+//            ]
+        });
+
     });
+
 
     function getUniqueId() {
         return $('.frame', element).attr('id');
@@ -76,21 +120,18 @@ function WorldMapXBlock(runtime, element) {
             }
         });
     }
+
+
     function on_changeLayer(el, json) {
         var layer = JSON.parse(json);
         //console.log("layer: id="+layer.id+",  name="+layer.name+",  visible="+layer.visibility+",  opacity="+layer.opacity);
         var useOpacityControls = $('.frame', element).attr('opacityControls');
         if( useOpacityControls && useOpacityControls.toLowerCase() == 'true' ) {
-            var id = "layerOpacityCtrl_"+getUniqueId()+"_"+layer.id;
+            var id = "layerOpacityCtrl_"+layer.id.replace((/[\. ]/g),'_');
             if( $('#'+id,el).length == 0 && layer.visibility ) {
-                //console.log("Creating control for id: "+layer.id);
-                var opacityControls = $(".opacityControls",el);
-                var ctrl = $(".opacityTemplate",el).clone();
-                ctrl.attr("id",id);
-                ctrl.removeClass("hidden");
-                ctrl.removeClass("opacityTemplate");
-                $('.layerName',ctrl).text(layer.name);
-                $('.slider',ctrl).slider({
+                var ctrl = document.createElement("div");  //$(".opacityControl-"+id, el);
+
+                $(ctrl).attr("id",id).slider({
                     value: layer.opacity,
                     min: 0,
                     max: 1,
@@ -101,10 +142,10 @@ function WorldMapXBlock(runtime, element) {
                         var newJson = JSON.stringify(layer);
                         console.log('slide handler: ui='+ui.value+"  for element: "+getUniqueId());
 
-                        MESSAGING.getInstance().send(
-                            getUniqueId(),
-                            new Message("setLayers", JSON.stringify(JSON.parse("{\""+layer.id+"\":"+JSON.stringify(layer)+"}")))
-                        );
+//                        MESSAGING.getInstance().send(
+//                            getUniqueId(),
+//                            new Message("setLayers", JSON.stringify(JSON.parse("{\""+layer.id+"\":"+JSON.stringify(layer)+"}")))
+//                        );
                         $.ajax({
                             type: "POST",
                             url: runtime.handlerUrl(el, 'change_layer_properties'),
@@ -117,7 +158,7 @@ function WorldMapXBlock(runtime, element) {
                         });
                     }
                 });
-                ctrl.appendTo(opacityControls);
+                ctrl.appendTo($('#layerControl-'+layer.id.replace((/[\. ]/g),'_')));
             } else if( !layer.visibility && $('#'+id,el).length > 0 ) {
               //  console.log("Removing control for id: "+layer.id);
                 $('#'+id,el).remove();
@@ -137,6 +178,7 @@ function WorldMapXBlock(runtime, element) {
 
 
     $(function ($) {
+        console.log("initialize on page load");
         /* Here's where you'd do things on page load. */
     });
 }

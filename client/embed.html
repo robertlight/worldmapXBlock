@@ -46,21 +46,15 @@ var app;
                 trigger: function(e) {
                     var map = e.object;
                     var lonlat = map.getLonLatFromPixel(e.xy);
-junk[junk.length] = lonlat;
 
                     var Geographic  = new OpenLayers.Projection("EPSG:4326"); 
                     var Mercator = new OpenLayers.Projection("EPSG:900913");
                     var point = new OpenLayers.Geometry.Point(lonlat.lon, lonlat.lat).transform(Mercator, Geographic);
                     MESSAGING.getInstance().send(new Message("click",point));
-if( junk.length > 2 ) {
-//   alert("distance between ("+junk[junk.length-1].lat+" N, " + junk[junk.length-1]+" E)   and  ("+junk[junk.length-2].lat+" N, "+junk[junk.length-2].lon+" E) is "+OpenLayers.Spherical.computeDistanceBetween(junk[junk.length-1], junk[junk.length-2]));
-                }
+
 //alert("you clicked ("+point.y+","+point.x+")");
                 }
             });
-
-
-var junk = new Array();
 
 
 Ext.onReady(function() {

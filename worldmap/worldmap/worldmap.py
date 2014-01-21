@@ -7,7 +7,7 @@ import threading
 import math
 
 from xblock.core import XBlock
-from xblock.fields import Scope, Integer, Any, String, Float, Dict, Boolean
+from xblock.fields import Scope, Integer, Any, String, Float, Dict, Boolean,List
 from xblock.fragment import Fragment
 
 log = logging.getLogger(__name__)
@@ -37,7 +37,38 @@ class WorldMapXBlock(XBlock):
     centerLat = Float(help="center of map (latitude)", default=None, scope=Scope.user_state)
     centerLon = Float(help="center of map (longitude)", default=None, scope=Scope.user_state)
 
-    layers = Dict(help="layer properties", default=None, scope=Scope.user_state)
+    has_children = True
+
+    #@classmethod
+    #def parse_xml(cls, node, runtime, keys, id_generator):
+    #    """
+    #    Parse the XML for a checker. A few arguments are handled specially,
+    #    then the rest get the usual treatment.
+    #    """
+    #    block = runtime.construct_xblock_from_class(cls, keys)
+    #
+    #    # Find <script> children, turn them into script content.
+    #    for child in node:
+    #        block.runtime.add_node_as_child(block, child, id_generator)
+    #
+    #    return block
+
+    @property
+    def layers(self):
+        layers = []
+        for child_id in self.children:  # pylint: disable=E1101
+            child = self.runtime.get_block(child_id)
+            if isinstance(child, LayersBlock):
+                layers.append(child.layers)
+        return layers
+
+    @property
+    def topLayerGroup(self):
+        for child_id in self.children: #pylint: disable=E1101
+            child = self.runtime.get_block(child_id)
+            if( isinstance(child, GroupControlBlock) ):
+                return child
+        return None
 
     def resource_string(self, path):
         """Handy helper for getting resources from our kit."""
@@ -52,10 +83,7 @@ class WorldMapXBlock(XBlock):
         """
         html = self.resource_string("static/html/worldmap.html")
 
-        layerData = "{}"
-        if self.layers != None:
-            layerData = json.dumps(self.layers)
-        frag = Fragment(html.format(self=self, layerData=layerData))
+        frag = Fragment(html.format(self=self))
         frag.add_css(self.resource_string("static/css/worldmap.css"))
         frag.add_css_url("http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css")
 #        frag.add_css_url("http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.14/themes/base/jquery-ui.css")
@@ -64,6 +92,9 @@ class WorldMapXBlock(XBlock):
 #        frag.add_javascript_url("http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui.js")
         frag.add_javascript(unicode(pkg_resources.resource_string(__name__, "static/js/src/xBlockCom-master.js")))
         frag.add_javascript(self.resource_string("static/js/src/worldmap.js"))
+        #frag.add_javascript_url("static/js/jquery.cookie.js")
+        #frag.add_javascript_url("static/js/jquery.dynatree.js")
+
         frag.initialize_js('WorldMapXBlock')
         return frag
 
@@ -94,6 +125,22 @@ class WorldMapXBlock(XBlock):
 
         return {'hit': isHit}
 
+
+    @XBlock.json_handler
+    def layerTree(self, data, suffix=''):
+        """
+        Called to get layer tree for a particular map
+        """
+        result = []
+
+        if( self.topLayerGroup == None ):
+            return []
+        else:
+            result = self.topLayerGroup.renderToDynatree()
+            return result
+
+        #return [ { 'title': "Item 1"}, {'title': "Folder 2", 'isFolder': True, 'children': [{'title': "Sub-item 2.1"},{'title': "Sub-item 2.2"}]}, {'title': "Item 3"} ];
+
     @XBlock.json_handler
     def set_zoom_level(self, data, suffix=''):
         """
@@ -117,11 +164,12 @@ class WorldMapXBlock(XBlock):
             return False
         else:
             # we have a threading problem... need to behave in single-threaded mode here
-            self.threadLock.acquire()
-            if self.layers == None:
-                self.layers = {}
-            self.layers[id] = {'name': data.get("name"),  'opacity': data.get("opacity"), 'visibility': data.get("visibility")}
-            self.threadLock.release()
+            #self.threadLock.acquire()
+            #if self.layers == None:
+            #    self.layers = {}
+            #self.layers[id] = {'name': data.get("name"),  'opacity': data.get("opacity"), 'visibility': data.get("visibility")}
+            #self.threadLock.release()
+            pass
         return True
 
     @XBlock.json_handler
@@ -148,7 +196,50 @@ class WorldMapXBlock(XBlock):
             ("WorldMapXBlock",
              """
                 <vertical_demo>
-                <worldmap href='http://23.21.172.243/maps/bostoncensus/embed?' opacityControls='false'/>
+                <worldmap href='http://23.21.172.243/maps/bostoncensus/embed?' opacityControls='false'>
+                   <layers>
+                      <layer id="OpenLayers_Layer_WMS_122">
+                         <param name="CensusYear" value="1972"/>
+                      </layer>
+                      <layer id="OpenLayers_Layer_WMS_124">
+                         <param name="CensusYear" value="1974"/>
+                      </layer>
+                      <layer id="OpenLayers_Layer_WMS_120">
+                         <param name="CensusYear" value="1976"/>
+                      </layer>
+                      <layer id="OpenLayers_Layer_Bing_92">
+                         <param name="CensusYear" value="1978"/>
+                      </layer>
+                      <layer id="OpenLayers_Layer_WMS_118">
+                         <param name="CensusYear" value="1980"/>
+                      </layer>
+                      <layer id="OpenLayers_Layer_Vector_132">
+                         <param name="CensusYear" value="1982"/>
+                      </layer>
+                   </layers>
+                   <group-control name="Census Data" visible="true">
+                      <layer-control layerid="OpenLayers_Layer_WMS_122" visible="true" name="layerA"/>
+                      <layer-control layerid="OpenLayers_Layer_WMS_124" visible="true" name="layerB"/>
+                      <layer-control layerid="OpenLayers_Layer_WMS_120" visible="true" name="layerC"/>
+                      <layer-control layerid="OpenLayers_Layer_Bing_92" visible="true" name="layerD"/>
+                      <layer-control layerid="OpenLayers_Layer_WMS_118" visible="true" name="layerE"/>
+                      <layer-control layerid="OpenLayers_Layer_Vector_132" visible="true" name="layerF"/>
+                      <group-control name="A sub group of layers">
+                         <group-control name="A sub-sub-group">
+                            <layer-control layerid="OpenLayers_Layer_Bing_92" visible="true" name="layerD.1"/>
+                            <layer-control layerid="OpenLayers_Layer_WMS_118" visible="true" name="layerE.1"/>
+                            <layer-control layerid="OpenLayers_Layer_Vector_132" visible="true" name="layerF.1"/>
+                         </group-control>
+                         <group-control name="another sub-sub-group">
+                            <layer-control layerid="OpenLayers_Layer_Bing_92" visible="true" name="layerD.2"/>
+                            <layer-control layerid="OpenLayers_Layer_WMS_118" visible="true" name="layerE.2"/>
+                            <layer-control layerid="OpenLayers_Layer_Vector_132" visible="true" name="layerF.2"/>
+                         </group-control>
+                         <layer-control layerid="OpenLayers_Layer_WMS_122" visible="true" name="layerA.1"/>
+                         <layer-control layerid="OpenLayers_Layer_WMS_124" visible="true" name="layerB.1"/>
+                      </group-control>
+                   </group-control>
+                </worldmap>
 
                 <problem_demo>
                     <html_demo>
@@ -161,3 +252,153 @@ class WorldMapXBlock(XBlock):
              """
             ),
         ]
+
+class LayersBlock(XBlock):
+    """An XBlock that records the layer definitions."""
+
+    has_children = True
+    @property
+
+    def layers(self):
+        layers = []
+        for child_id in self.children:  # pylint: disable=E1101
+            child = self.runtime.get_block(child_id)
+            if isinstance(child, LayerBlock):
+                layers.append(child)
+        return layers
+
+
+    def problem_view(self, context=None):
+        """
+        has no visible rendering
+        """
+        pass
+
+    student_view = problem_view
+
+    #@classmethod
+    #def parse_xml(cls, node, runtime, keys, id_generator):
+    #    """
+    #    Parse the XML for a checker. A few arguments are handled specially,
+    #    then the rest get the usual treatment.
+    #    """
+    #    block = runtime.construct_xblock_from_class(cls, keys)
+    #
+    #    # Find <script> children, turn them into script content.
+    #    for child in node:
+    #        block.runtime.add_node_as_child(block, child, id_generator)
+    #
+    #    return block
+
+
+class LayerBlock(XBlock):
+    """An XBlock that records the layer definition."""
+
+    has_children = True
+
+    id = String(help="worldmap layer id", default=None, scope=Scope.content)
+
+    @property
+    def params(self):
+        params = []
+        for child_id in self.children:  # pylint: disable=E1101
+            child = self.runtime.get_block(child_id)
+            if isinstance(child, ParamBlock):
+                params.append(child)
+        return params
+
+    def problem_view(self, context=None):
+        """
+        has no visible rendering
+        """
+        pass
+
+    student_view = problem_view
+
+class ParamBlock(XBlock):
+    """An XBlock that records the layer parameter info."""
+
+    has_children = False
+
+    name  = String(help="worldmap layer parameter name",  default=None, scope=Scope.content)
+    value = String(help="worldmap layer parameter value", default=None, scope=Scope.content)
+
+    #@classmethod
+    #def parse_xml(cls, node, runtime, keys, id_generator):
+    #    """
+    #    Parse the XML for a checker. A few arguments are handled specially,
+    #    then the rest get the usual treatment.
+    #    """
+    #    block = runtime.construct_xblock_from_class(cls, keys)
+    #
+    #    # Find <script> children, turn them into script content.
+    #    for child in node:
+    #        block.runtime.add_node_as_child(block, child, id_generator)
+    #
+    #    return block
+
+    def problem_view(self, context=None):
+        """
+        has no visible rendering
+        """
+        pass
+
+    student_view = problem_view
+
+
+
+class LayerControlBlock(XBlock):
+    """An XBlock that records the layer-control definition."""
+
+    has_children = False
+
+    layerid = String(help="worldmap layer id", default=None, scope=Scope.content)
+    name    = String(help="visible name of the layer", default=None, scope=Scope.content)
+    visibility = Boolean(help="whether or not the control should be visible", default=True, scope=Scope.content)
+
+    def problem_view(self, context=None):
+        """
+        has no visible rendering
+        """
+        pass
+
+    student_view = problem_view
+
+    def renderToDynatree(self):
+        return { 'title': self.name }
+
+
+class GroupControlBlock(LayerControlBlock):
+    """An XBlock that records the layer group definition."""
+
+    has_children = True
+
+    name    = String(help="visible name of the group", default="Layer Group", scope=Scope.content)
+    visibility = Boolean(help="whether or not the control should be visible", default=True, scope=Scope.content)
+
+    @property
+    def members(self):
+        result = []
+        for child_id in self.children:  # pylint: disable=E1101
+            child = self.runtime.get_block(child_id)
+            if isinstance(child, LayerControlBlock):
+                result.append(child)
+        return result
+
+    def problem_view(self, context=None):
+        """
+        has no visible rendering
+        """
+        pass
+
+    student_view = problem_view
+
+    def renderToDynatree(self):
+        result = []
+
+        for member in self.members :
+            result.append(member.renderToDynatree());
+            #if( isinstance(member,GroupControlBlock)):
+            #else:
+            #    result.append({ 'title': self.name });
+        return {'title':self.name, 'isFolder': True, 'children': result }

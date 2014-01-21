@@ -27,6 +27,9 @@ setup(
     entry_points={
         'xblock.v1': [
             'worldmap = worldmap:WorldMapXBlock',
+            'layer-control = worldmap:LayerControlBlock',
+            'group-control = worldmap:GroupControlBlock',
+            #TODO:  what is this for?  It doesn't seem to matter if things are defined here..
         ]
     },
     package_data=package_data("worldmap", "static"),
