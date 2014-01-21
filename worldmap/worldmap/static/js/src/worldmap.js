@@ -63,27 +63,17 @@ function WorldMapXBlock(runtime, element) {
             },
         	ajaxDefaults: null,
             onSelect: function(select, node) {
-                if( node.data.isFolder ) {
-                    selectFolder(select,node.data);
-                } else {
-                    selectLayer(select,node.data.key);
-                }
+                node.visit( function(n) {
+                    if( !n.data.isFolder ) {
+                        selectLayer(select, n.data.key);
+                    }
+                }, true);
             }
         });
 
     });
 
 
-    function selectFolder(select,node) {
-        for( var i=0; i<node.children.length; i++) {
-            var childNode = node.children[i];
-            if( childNode.isFolder ) {
-                selectFolder(select,childNode);
-            } else {
-                selectLayer(select,childNode.key);
-            }
-        }
-    }
     function selectLayer(select,layerid) {
         var layer = {opacity:1.0, visibility:select};
         var layerData = JSON.stringify(JSON.parse("{\""+layerid+"\":"+JSON.stringify(layer)+"}"));
@@ -91,7 +81,7 @@ function WorldMapXBlock(runtime, element) {
         MESSAGING.getInstance().send(
             getUniqueId(),
             new Message('setLayers', layerData)
-        );
+        )
     }
     function getUniqueId() {
         return $('.frame', element).attr('id');
@@ -139,7 +129,11 @@ function WorldMapXBlock(runtime, element) {
 
     function on_changeLayer(el, json) {
         var layer = JSON.parse(json);
-        //console.log("layer: id="+layer.id+",  name="+layer.name+",  visible="+layer.visibility+",  opacity="+layer.opacity);
+        $(".layerControls",el).dynatree("getRoot").visit( function(node) {
+            if( node.data.key == layer.id ) {
+                node.select(layer.visibility);
+            }
+        });
         var useOpacityControls = $('.frame', element).attr('opacityControls');
         if( useOpacityControls && useOpacityControls.toLowerCase() == 'true' ) {
             var id = "layerOpacityCtrl_"+layer.id.replace((/[\. ]/g),'_');

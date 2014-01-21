@@ -252,8 +252,8 @@ class LayersBlock(XBlock):
     """An XBlock that records the layer definitions."""
 
     has_children = True
-    @property
 
+    @property
     def layers(self):
         layers = []
         for child_id in self.children:  # pylint: disable=E1101
