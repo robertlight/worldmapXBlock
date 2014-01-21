@@ -131,15 +131,10 @@ class WorldMapXBlock(XBlock):
         """
         Called to get layer tree for a particular map
         """
-        result = []
-
         if( self.topLayerGroup == None ):
             return []
         else:
-            result = self.topLayerGroup.renderToDynatree()
-            return result
-
-        #return [ { 'title': "Item 1"}, {'title': "Folder 2", 'isFolder': True, 'children': [{'title': "Sub-item 2.1"},{'title': "Sub-item 2.2"}]}, {'title': "Item 3"} ];
+            return self.topLayerGroup.renderToDynatree()
 
     @XBlock.json_handler
     def set_zoom_level(self, data, suffix=''):
@@ -220,8 +215,8 @@ class WorldMapXBlock(XBlock):
                    <group-control name="Census Data" visible="true">
                       <layer-control layerid="OpenLayers_Layer_WMS_122" visible="true" name="layerA"/>
                       <layer-control layerid="OpenLayers_Layer_WMS_124" visible="true" name="layerB"/>
-                      <layer-control layerid="OpenLayers_Layer_WMS_120" visible="true" name="layerC"/>
-                      <layer-control layerid="OpenLayers_Layer_Bing_92" visible="true" name="layerD"/>
+                      <layer-control layerid="OpenLayers_Layer_WMS_120" visible="false" name="layerC"/>
+                      <layer-control layerid="OpenLayers_Layer_Bing_92" visible="false" name="layerD"/>
                       <layer-control layerid="OpenLayers_Layer_WMS_118" visible="true" name="layerE"/>
                       <layer-control layerid="OpenLayers_Layer_Vector_132" visible="true" name="layerF"/>
                       <group-control name="A sub group of layers">
@@ -230,7 +225,7 @@ class WorldMapXBlock(XBlock):
                             <layer-control layerid="OpenLayers_Layer_WMS_118" visible="true" name="layerE.1"/>
                             <layer-control layerid="OpenLayers_Layer_Vector_132" visible="true" name="layerF.1"/>
                          </group-control>
-                         <group-control name="another sub-sub-group">
+                         <group-control name="another sub-sub-group" visible="false">
                             <layer-control layerid="OpenLayers_Layer_Bing_92" visible="true" name="layerD.2"/>
                             <layer-control layerid="OpenLayers_Layer_WMS_118" visible="true" name="layerE.2"/>
                             <layer-control layerid="OpenLayers_Layer_Vector_132" visible="true" name="layerF.2"/>
@@ -354,7 +349,7 @@ class LayerControlBlock(XBlock):
 
     layerid = String(help="worldmap layer id", default=None, scope=Scope.content)
     name    = String(help="visible name of the layer", default=None, scope=Scope.content)
-    visibility = Boolean(help="whether or not the control should be visible", default=True, scope=Scope.content)
+    visible = Boolean(help="whether or not the control should be visible", default=True, scope=Scope.content)
 
     def problem_view(self, context=None):
         """
@@ -365,8 +360,12 @@ class LayerControlBlock(XBlock):
     student_view = problem_view
 
     def renderToDynatree(self):
-        return { 'title': self.name }
-
+        node = { 'title': self.name }
+        if( self.visible == False ):
+            node['hidden'] = True
+            #node['addClass'] = "dynatree-hidden"
+            #node['hideCheckbox'] = True
+        return node
 
 class GroupControlBlock(LayerControlBlock):
     """An XBlock that records the layer group definition."""
@@ -374,7 +373,7 @@ class GroupControlBlock(LayerControlBlock):
     has_children = True
 
     name    = String(help="visible name of the group", default="Layer Group", scope=Scope.content)
-    visibility = Boolean(help="whether or not the control should be visible", default=True, scope=Scope.content)
+    visible = Boolean(help="whether or not the control should be visible", default=True, scope=Scope.content)
 
     @property
     def members(self):
@@ -401,4 +400,11 @@ class GroupControlBlock(LayerControlBlock):
             #if( isinstance(member,GroupControlBlock)):
             #else:
             #    result.append({ 'title': self.name });
-        return {'title':self.name, 'isFolder': True, 'children': result }
+
+        node = {'title':self.name, 'isFolder': True, 'children': result }
+        if( self.visible == False ):
+            node['hidden'] = True
+            #node['addClass'] = "dynatree-hidden"
+            #node['hideCheckbox'] = True
+
+        return node
