@@ -73,7 +73,6 @@ function WorldMapXBlock(runtime, element) {
 
     });
 
-
     function selectLayer(select,layerid) {
         var layer = {opacity:1.0, visibility:select};
         var layerData = JSON.stringify(JSON.parse("{\""+layerid+"\":"+JSON.stringify(layer)+"}"));
@@ -125,7 +124,6 @@ function WorldMapXBlock(runtime, element) {
             }
         });
     }
-
 
     function on_changeLayer(el, json) {
         var layer = JSON.parse(json);
