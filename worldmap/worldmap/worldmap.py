@@ -54,13 +54,20 @@ class WorldMapXBlock(XBlock):
     #    return block
 
     @property
+    def sliders(self):
+        for child_id in self.children:  # pylint: disable=E1101
+            child = self.runtime.get_block(child_id)
+            if isinstance(child, SlidersBlock):
+                return child.sliders
+        return None
+
+    @property
     def layers(self):
-        layers = []
         for child_id in self.children:  # pylint: disable=E1101
             child = self.runtime.get_block(child_id)
             if isinstance(child, LayersBlock):
-                layers.append(child.layers)
-        return layers
+                return child.layers
+        return None
 
     @property
     def topLayerGroup(self):
@@ -100,9 +107,38 @@ class WorldMapXBlock(XBlock):
 
     problem_view = student_view
 
-    #Radius of earth is approx 6371km
-   # DEG_PER_KM = 360./(2*6371*math.pi)
-    SPHERICAL_DEFAULT_RADIUS = 6378137; #Meters
+    #Radius of earth:
+    SPHERICAL_DEFAULT_RADIUS = 6378137    #Meters
+
+    @XBlock.json_handler
+    def getSliderSetup(self, data, suffix=''):
+        result = []
+        if( self.sliders != None ):
+            for slider in self.sliders:
+                result.append({
+                   'id':   slider.id,
+                   'min':  slider.min,
+                   'max':  slider.max,
+                   'incr': slider.incr,
+                   'position': slider.position,
+                   'param': slider.param
+                })
+        return result
+
+    @XBlock.json_handler
+    def getLayerSpecs(self, data, suffix=''):
+        result = []
+        if( self.layers != None ):
+            for layer in self.layers:
+                params = []
+                for param in layer.params:
+                    params.append({ 'name':param.name, 'value':param.value, 'min':param.min, 'max':param.max})
+
+                result.append({
+                   'id':   layer.id,
+                   'params':  params
+                })
+        return result
 
     @XBlock.json_handler
     def test_click(self, data, suffix=''):
@@ -197,19 +233,16 @@ class WorldMapXBlock(XBlock):
                          <param name="CensusYear" value="1972"/>
                       </layer>
                       <layer id="OpenLayers_Layer_WMS_124">
-                         <param name="CensusYear" value="1974"/>
+                         <param name="CensusYear" min="1973" max="1977"/>
                       </layer>
                       <layer id="OpenLayers_Layer_WMS_120">
                          <param name="CensusYear" value="1976"/>
                       </layer>
-                      <layer id="OpenLayers_Layer_Bing_92">
+                      <layer id="OpenLayers_Layer_WMS_118">
                          <param name="CensusYear" value="1978"/>
                       </layer>
-                      <layer id="OpenLayers_Layer_WMS_118">
-                         <param name="CensusYear" value="1980"/>
-                      </layer>
                       <layer id="OpenLayers_Layer_Vector_132">
-                         <param name="CensusYear" value="1982"/>
+                         <param name="CensusYear" value="1980"/>
                       </layer>
                    </layers>
                    <group-control name="Census Data" visible="true">
@@ -234,6 +267,11 @@ class WorldMapXBlock(XBlock):
                          <layer-control layerid="OpenLayers_Layer_WMS_124" visible="true" name="layerB.1"/>
                       </group-control>
                    </group-control>
+
+                   <sliders>
+                      <slider id="timeSlider" param="CensusYear" min="1972" max="1980" incr="0.2" position="top"/>
+                      <slider id="timeSlider2" param="CensusYear" min="1972" max="1980" incr="0.2" position="bottom"/>
+                    </sliders>
                 </worldmap>
 
                 <problem_demo>
@@ -247,6 +285,58 @@ class WorldMapXBlock(XBlock):
              """
             ),
         ]
+
+class SlidersBlock(XBlock):
+    """An XBlock that records the slider definitions."""
+
+    has_children = True
+
+    @property
+    def sliders(self):
+        sliders = []
+        for child_id in self.children:  # pylint: disable=E1101
+            child = self.runtime.get_block(child_id)
+            if isinstance(child, SliderBlock):
+                sliders.append(child)
+        return sliders
+
+
+    def problem_view(self, context=None):
+        """
+        has no visible rendering
+        """
+        pass
+
+    student_view = problem_view
+
+class SliderBlock(XBlock):
+    """An XBlock that records the slider definition."""
+
+    has_children = True
+
+    id = String(help="worldmap slider id", default=None, scope=Scope.content)
+    param = String(help="the param the slider controls", default=None, scope=Scope.content)
+    min = Float(help="the minimum value of the slider", default=None, scope=Scope.content)
+    max = Float(help="the maximum value of the slider", default=None, scope=Scope.content)
+    incr= Float(help="increment value for the slider", default=None, scope=Scope.content)
+    position=String(help="position of slider.  Values: top,bottom,left,right", default="bottom", scope=Scope.content)
+
+    @property
+    def params(self):
+        params = []
+        for child_id in self.children:  # pylint: disable=E1101
+            child = self.runtime.get_block(child_id)
+            if isinstance(child, ParamBlock):
+                params.append(child)
+        return params
+
+    def problem_view(self, context=None):
+        """
+        has no visible rendering
+        """
+        pass
+
+    student_view = problem_view
 
 class LayersBlock(XBlock):
     """An XBlock that records the layer definitions."""
@@ -270,20 +360,6 @@ class LayersBlock(XBlock):
         pass
 
     student_view = problem_view
-
-    #@classmethod
-    #def parse_xml(cls, node, runtime, keys, id_generator):
-    #    """
-    #    Parse the XML for a checker. A few arguments are handled specially,
-    #    then the rest get the usual treatment.
-    #    """
-    #    block = runtime.construct_xblock_from_class(cls, keys)
-    #
-    #    # Find <script> children, turn them into script content.
-    #    for child in node:
-    #        block.runtime.add_node_as_child(block, child, id_generator)
-    #
-    #    return block
 
 
 class LayerBlock(XBlock):
@@ -317,20 +393,8 @@ class ParamBlock(XBlock):
 
     name  = String(help="worldmap layer parameter name",  default=None, scope=Scope.content)
     value = String(help="worldmap layer parameter value", default=None, scope=Scope.content)
-
-    #@classmethod
-    #def parse_xml(cls, node, runtime, keys, id_generator):
-    #    """
-    #    Parse the XML for a checker. A few arguments are handled specially,
-    #    then the rest get the usual treatment.
-    #    """
-    #    block = runtime.construct_xblock_from_class(cls, keys)
-    #
-    #    # Find <script> children, turn them into script content.
-    #    for child in node:
-    #        block.runtime.add_node_as_child(block, child, id_generator)
-    #
-    #    return block
+    min   = Float(help="worldmap layer parameter range minimum", default=None, scope=Scope.content)
+    max   = Float(help="worldmap layer parameter range maximum", default=None, scope=Scope.content)
 
     def problem_view(self, context=None):
         """
@@ -363,6 +427,7 @@ class LayerControlBlock(XBlock):
         node = { 'title': self.name, 'key': self.layerid }
         if( self.visible == False ):
             node['hidden'] = True
+#            node['addClass'] = "hidden"
         return node
 
 class GroupControlBlock(LayerControlBlock):
@@ -395,14 +460,11 @@ class GroupControlBlock(LayerControlBlock):
 
         for member in self.members :
             result.append(member.renderToDynatree());
-            #if( isinstance(member,GroupControlBlock)):
-            #else:
-            #    result.append({ 'title': self.name });
 
         node = {'title':self.name, 'isFolder': True, 'children': result }
         if( self.visible == False ):
             node['hidden'] = True
-            #node['addClass'] = "dynatree-hidden"
+#            node['addClass'] = "hidden"
             #node['hideCheckbox'] = True
 
         return node

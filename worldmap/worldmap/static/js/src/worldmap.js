@@ -34,6 +34,86 @@ function WorldMapXBlock(runtime, element) {
 //        }
 
 
+        $.ajax({
+             type: "POST",
+             url: runtime.handlerUrl(element, 'getSliderSetup'),
+             data: "null",
+             success: function(result) {
+
+                for( var i=0; i<result.length; i++) {
+                    var sliderSpec = result[i];
+                    var sliderSpecId = sliderSpec.id;
+                    console.log("sliderSpec.id = "+sliderSpecId);
+
+                    var top=15;
+                    var left=-10;
+
+                    if( sliderSpec.position=="top" ) {
+                        top=-10;
+                    }
+
+//                    $('<div id="tooltip-'+sliderSpecId+'" />').css({
+//                        position: 'absolute',
+//                        top: top,
+//                        left: left
+//                    }).hide();
+
+                    var ctrl = document.createElement("div");
+                    var orientation = (sliderSpec.position == "right" || sliderSpec.position == "left") ? "vertical" : "horizontal";
+
+//                    var handler = function(e) {
+//                        var tooltipId = "#tooltip-"+ $(e.target.parentElement).attr("id").toString().replace("slider-","");
+//                        if(e.type == "mouseenter") {
+//                            $(tooltipId).show()
+//                        } else {
+//                            $(tooltipId).hide()
+//                        }
+//                    }
+                    $(ctrl).attr("id","slider-"+sliderSpec.id).slider({
+                        value: sliderSpec.min,
+                        min:   sliderSpec.min,
+                        max:   sliderSpec.max,
+                        step:  sliderSpec.incr,
+                        orientation: orientation,
+                        animate: "fast",
+                        slide: function(e, ui) {
+//                           var tooltipId = "#tooltip-"+ e.target.id.replace("slider-","");
+//
+//                            $(tooltipId).text(ui.value);
+
+                            var layerSpecs = window.worldmapLayerSpecs[getUniqueId()];
+                            for (var i=0; i<layerSpecs.length; i++) {
+                                for( var j=0; j<layerSpecs[i].params.length; j++) {
+                                    if( sliderSpec.param == layerSpecs[i].params[j].name ) {
+                                        var paramValue = layerSpecs[i].params[j].value;
+                                        var nFrac = 0;
+                                        if( paramValue != null ) {
+                                            var loc = paramValue.indexOf(".");
+                                            if( loc != -1 ) nFrac = paramValue.length - loc - 1;
+                                        }
+                                        var visible =  (paramValue != null && paramValue == Math.floor(ui.value * Math.pow(10,nFrac))/Math.pow(10,nFrac))
+                                            || (ui.value >= layerSpecs[i].params[j].min && ui.value <= layerSpecs[i].params[j].max);
+                                        selectLayer(visible, layerSpecs[i].id);
+                                    }
+                                }
+                            }
+                        }
+                    }); //.find(".ui-slider-handle").append($("#tooltip-"+sliderSpecId)).hover(handler);
+                    $(ctrl).appendTo($('.sliders-'+sliderSpec.position,element));
+                }
+             }
+        });
+
+        $.ajax({
+             type: "POST",
+             url: runtime.handlerUrl(element, 'getLayerSpecs'),
+             data: "null",
+             success: function(result) {
+                if( typeof window.worldmapLayerSpecs == "undefined" ) window.worldmapLayerSpecs = [];
+                window.worldmapLayerSpecs[getUniqueId()] = result;
+             }
+        });
+
         $('.layerControls',element).dynatree({
             title: "LayerControls",
 //            minExpandLevel: 1, // 1=rootnote not collapsible
@@ -73,14 +153,20 @@ function WorldMapXBlock(runtime, element) {
 
     });
 
+    var layerVisibilityCache = [];
     function selectLayer(select,layerid) {
-        var layer = {opacity:1.0, visibility:select};
-        var layerData = JSON.stringify(JSON.parse("{\""+layerid+"\":"+JSON.stringify(layer)+"}"));
-       // var layerData = JSON.parse('{"'+layerid+'": {"opacity":1.0, "visibility":"'+select+'}}');
-        MESSAGING.getInstance().send(
-            getUniqueId(),
-            new Message('setLayers', layerData)
-        )
+        var uniqId = getUniqueId();
+        var cachedValue = layerVisibilityCache[uniqId+layerid];
+        if( typeof cachedValue == "undefined" || cachedValue != select) {
+            var layer = {opacity:1.0, visibility:select};
+            var layerData = JSON.stringify(JSON.parse("{\""+layerid+"\":"+JSON.stringify(layer)+"}"));
+           // var layerData = JSON.parse('{"'+layerid+'": {"opacity":1.0, "visibility":"'+select+'}}');
+            MESSAGING.getInstance().send(
+                uniqId,
+                new Message('setLayers', layerData)
+            )
+            layerVisibilityCache[uniqId+layerid] = select;
+        }
     }
     function getUniqueId() {
         return $('.frame', element).attr('id');
