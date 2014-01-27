@@ -45,30 +45,31 @@ function WorldMapXBlock(runtime, element) {
                     var sliderSpecId = sliderSpec.id;
                     console.log("sliderSpec.id = "+sliderSpecId);
 
-                    var top=15;
+                    var top=25;
                     var left=-10;
 
                     if( sliderSpec.position=="top" ) {
-                        top=-10;
+                        top=-25;
                     }
 
-//                    $('<div id="tooltip-'+sliderSpecId+'" />').css({
-//                        position: 'absolute',
-//                        top: top,
-//                        left: left
-//                    }).hide();
+                    var tooltip = $('<div class="slider-tooltip" />').css({
+                        position: 'absolute',
+                        top: top,
+                        left: left,
+                        border:0
+                    }).hide();
 
                     var ctrl = document.createElement("div");
                     var orientation = (sliderSpec.position == "right" || sliderSpec.position == "left") ? "vertical" : "horizontal";
 
-//                    var handler = function(e) {
-//                        var tooltipId = "#tooltip-"+ $(e.target.parentElement).attr("id").toString().replace("slider-","");
-//                        if(e.type == "mouseenter") {
-//                            $(tooltipId).show()
-//                        } else {
-//                            $(tooltipId).hide()
-//                        }
-//                    }
+                    var handler = function(e) {
+                        var tooltip = $(e.target).find(".slider-tooltip");
+                        if(e.type == "mouseenter") {
+                            tooltip.show()
+                        } else {
+                            tooltip.hide()
+                        }
+                    }
                     $(ctrl).attr("id","slider-"+sliderSpec.id).slider({
                         value: sliderSpec.min,
                         min:   sliderSpec.min,
@@ -79,7 +80,7 @@ function WorldMapXBlock(runtime, element) {
                         slide: function(e, ui) {
 //                           var tooltipId = "#tooltip-"+ e.target.id.replace("slider-","");
 //
-//                            $(tooltipId).text(ui.value);
+                            $(this).find(".ui-slider-handle .slider-tooltip").text(ui.value);
 
                             var layerSpecs = window.worldmapLayerSpecs[getUniqueId()];
                             for (var i=0; i<layerSpecs.length; i++) {
@@ -98,7 +99,7 @@ function WorldMapXBlock(runtime, element) {
                                 }
                             }
                         }
-                    }); //.find(".ui-slider-handle").append($("#tooltip-"+sliderSpecId)).hover(handler);
+                    }).find(".ui-slider-handle").append(tooltip).hover(handler);
                     $(ctrl).appendTo($('.sliders-'+sliderSpec.position,element));
                 }
              }
