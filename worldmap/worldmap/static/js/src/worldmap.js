@@ -70,6 +70,8 @@ function WorldMapXBlock(runtime, element) {
                             tooltip.hide()
                         }
                     }
+
+
                     $(ctrl).attr("id","slider-"+sliderSpec.id).slider({
                         value: sliderSpec.min,
                         min:   sliderSpec.min,
@@ -78,8 +80,6 @@ function WorldMapXBlock(runtime, element) {
                         orientation: orientation,
                         animate: "fast",
                         slide: function(e, ui) {
-//                           var tooltipId = "#tooltip-"+ e.target.id.replace("slider-","");
-//
                             $(this).find(".ui-slider-handle .slider-tooltip").text(ui.value);
 
                             var layerSpecs = window.worldmapLayerSpecs[getUniqueId()];
@@ -99,7 +99,10 @@ function WorldMapXBlock(runtime, element) {
                                 }
                             }
                         }
-                    }).find(".ui-slider-handle").append(tooltip).hover(handler);
+                    }).css(orientation == "vertical" ? {height:250} : {width:250})
+                      .find(".ui-slider-handle")
+                      .append(tooltip)
+                      .hover(handler);
                     $(ctrl).appendTo($('.sliders-'+sliderSpec.position,element));
                 }
              }

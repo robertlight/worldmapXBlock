@@ -269,8 +269,10 @@ class WorldMapXBlock(XBlock):
                    </group-control>
 
                    <sliders>
-                      <slider id="timeSlider" param="CensusYear" min="1972" max="1980" incr="0.2" position="top"/>
-                      <slider id="timeSlider2" param="CensusYear" min="1972" max="1980" incr="0.2" position="bottom"/>
+                      <slider id="timeSlider" param="CensusYear" min="1972" max="1980" incr="0.2" position="left"/>
+                      <slider id="timeSlider2" param="CensusYear" min="1972" max="1980" incr="0.2" position="right"/>
+                      <slider id="timeSlider3" param="CensusYear" min="1972" max="1980" incr="0.2" position="top"/>
+                      <slider id="timeSlider4" param="CensusYear" min="1972" max="1980" incr="0.2" position="bottom"/>
                     </sliders>
                 </worldmap>
 
