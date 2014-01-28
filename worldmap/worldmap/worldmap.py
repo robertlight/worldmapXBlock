@@ -273,9 +273,9 @@ class WorldMapXBlock(XBlock):
                       <slider id="timeSlider" title="A" param="CensusYear" min="1972" max="1980" incr="0.2" position="left"/>
                       <slider id="timeSlider2" title="B" param="CensusYear" min="1972" max="1980" incr="0.2" position="right"/>
                       <slider id="timeSlider6" title="Now is the time for" param="CensusYear" min="1972" max="1980" incr="0.2" position="right"/>
-                      <slider id="timeSlider3" title="C" param="CensusYear" min="1972" max="1980" incr="0.2" position="top"/>
-                      <slider id="timeSlider4" title="D" param="CensusYear" min="1972" max="1980" incr="0.2" position="bottom"/>
-                      <slider id="timeSlider5" title="D2" param="CensusYear" min="1972" max="1980" incr="0.2" position="bottom"/>
+                      <slider id="timeSlider3" title="Hello world" param="CensusYear" min="1972" max="1980" incr="0.2" position="top"/>
+                      <slider id="timeSlider4" title="Now is the time for all good men" param="CensusYear" min="1972" max="1980" incr="0.2" position="bottom"/>
+                      <slider id="timeSlider5" title="to come to the aid of their country" param="CensusYear" min="1972" max="1980" incr="0.2" position="bottom"/>
                     </sliders>
                 </worldmap>
 

@@ -63,21 +63,23 @@ function WorldMapXBlock(runtime, element) {
                     var title = $('<div class="slider-title"/>').text(sliderSpec.title).show();
 
                     var ctrl = document.createElement("div");
-                    var titleLabel = document.createElement("div");
+                    var startLabel = document.createElement("div");
                     var endLabel = document.createElement("div");
                     var sliderCtrl = document.createElement("div");
 
                     var orientation = (sliderSpec.position == "right" || sliderSpec.position == "left") ? "vertical" : "horizontal";
                     if( orientation == "horizontal" ) {
-                        $(titleLabel).text(sliderSpec.min).appendTo(ctrl);
-                        $(sliderCtrl).appendTo(ctrl);
-                        $(endLabel).text(sliderSpec.max).appendTo(ctrl);
+                        $(ctrl).addClass("horizontal-slider");
+                        $(startLabel).addClass("horizontal-label").addClass("horizontal-label-left").text(sliderSpec.min).appendTo(ctrl);
+                        $(sliderCtrl).addClass("horizontal-label").appendTo(ctrl);
+                        $(endLabel).addClass("horizontal-label").text(sliderSpec.max).appendTo(ctrl);
+                        $(title).addClass("horizontal-label-title");
                     } else {
                         $(title).addClass("vertical-label-title");
                         $(ctrl).css({float:'left', height:'100%', width:'40px'});
                         $(endLabel).addClass("vertical-label").text(sliderSpec.max).appendTo(ctrl);
                         $(sliderCtrl).addClass("vertical-slider").appendTo(ctrl);
-                        $(titleLabel).addClass("vertical-label").addClass("vertical-label-bottom").text(sliderSpec.min).appendTo(ctrl);
+                        $(startLabel).addClass("vertical-label").addClass("vertical-label-bottom").text(sliderSpec.min).appendTo(ctrl);
                     }
 
                     var handler = function(e) {

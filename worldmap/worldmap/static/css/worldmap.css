@@ -23,7 +23,7 @@
     float: left;
     position:relative;
     top:-15;
-    left:-10px;
+    left:-7px;
     white-space:nowrap;
     font-size: 9pt;
 }
@@ -36,7 +36,7 @@
     transform:         rotate(-90deg);
     position: relative;
     top:-100px;
-    left: -12px;
+    left: -7px;
     z-index:1;
     font-size: 9pt;
     color:grey;
@@ -45,11 +45,32 @@
 .vertical-label-bottom {
     clear:left;
     top:20px;
-    left:-12px;
+    left:-7px;
 }
 
 .vertical-slider {
     float: left;
     clear:left;
     font-size: 9pt;
+    width:22px;
+    margin-left:5px;
+    margin-right:5px;
+}
+.horizontal-slider {
+    width:100%;
+    margin-top:5px;
+    margin-bottom:5px;
+    font-size:9pt;
+    white-space:nowrap;
+}
+.horizontal-label-left {
+    width:60px;
+}
+.horizontal-label-title {
+    position: relative;
+    left: -220px;
+    color: grey;
+}
+.horizontal-label {
+    float:left;
 }
