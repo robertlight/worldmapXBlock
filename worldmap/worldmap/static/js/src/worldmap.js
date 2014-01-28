@@ -49,15 +49,12 @@ function WorldMapXBlock(runtime, element) {
                     var left=-10;
 
                     if( sliderSpec.position=="top" ) {
-                        top=-25;
+                        top=-15;
                     }
 
                     var tooltip = $('<div class="slider-tooltip" />').css({
-                        position: 'absolute',
                         top: top,
-                        left: left,
-                        'z-index': 3,
-                        border:0
+                        left: left
                     }).hide();
 
                     var title = $('<div class="slider-title"/>').text(sliderSpec.title).show();
@@ -76,7 +73,7 @@ function WorldMapXBlock(runtime, element) {
                         $(title).addClass("horizontal-label-title");
                     } else {
                         $(title).addClass("vertical-label-title");
-                        $(ctrl).css({float:'left', height:'100%', width:'40px'});
+                        $(ctrl).addClass("vertical-slider-container");
                         $(endLabel).addClass("vertical-label").text(sliderSpec.max).appendTo(ctrl);
                         $(sliderCtrl).addClass("vertical-slider").appendTo(ctrl);
                         $(startLabel).addClass("vertical-label").addClass("vertical-label-bottom").text(sliderSpec.min).appendTo(ctrl);
