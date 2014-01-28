@@ -121,7 +121,8 @@ class WorldMapXBlock(XBlock):
                    'max':  slider.max,
                    'incr': slider.incr,
                    'position': slider.position,
-                   'param': slider.param
+                   'param': slider.param,
+                   'title': slider.title
                 })
         return result
 
@@ -269,10 +270,12 @@ class WorldMapXBlock(XBlock):
                    </group-control>
 
                    <sliders>
-                      <slider id="timeSlider" param="CensusYear" min="1972" max="1980" incr="0.2" position="left"/>
-                      <slider id="timeSlider2" param="CensusYear" min="1972" max="1980" incr="0.2" position="right"/>
-                      <slider id="timeSlider3" param="CensusYear" min="1972" max="1980" incr="0.2" position="top"/>
-                      <slider id="timeSlider4" param="CensusYear" min="1972" max="1980" incr="0.2" position="bottom"/>
+                      <slider id="timeSlider" title="A" param="CensusYear" min="1972" max="1980" incr="0.2" position="left"/>
+                      <slider id="timeSlider2" title="B" param="CensusYear" min="1972" max="1980" incr="0.2" position="right"/>
+                      <slider id="timeSlider6" title="Now is the time for" param="CensusYear" min="1972" max="1980" incr="0.2" position="right"/>
+                      <slider id="timeSlider3" title="C" param="CensusYear" min="1972" max="1980" incr="0.2" position="top"/>
+                      <slider id="timeSlider4" title="D" param="CensusYear" min="1972" max="1980" incr="0.2" position="bottom"/>
+                      <slider id="timeSlider5" title="D2" param="CensusYear" min="1972" max="1980" incr="0.2" position="bottom"/>
                     </sliders>
                 </worldmap>
 
@@ -322,6 +325,7 @@ class SliderBlock(XBlock):
     max = Float(help="the maximum value of the slider", default=None, scope=Scope.content)
     incr= Float(help="increment value for the slider", default=None, scope=Scope.content)
     position=String(help="position of slider.  Values: top,bottom,left,right", default="bottom", scope=Scope.content)
+    title=String(help="title/label for slider",default=None, scope=Scope.content)
 
     @property
     def params(self):

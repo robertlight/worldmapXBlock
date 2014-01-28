@@ -13,3 +13,43 @@
     display: none;
 }
 
+.vertical-label {
+    -webkit-transform: rotate(-90deg);
+    -moz-transform:    rotate(-90deg);
+    -ms-transform:     rotate(-90deg);
+    -o-transform:      rotate(-90deg);
+    transform:         rotate(-90deg);
+    filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=3); //for IE
+    float: left;
+    position:relative;
+    top:-15;
+    left:-10px;
+    white-space:nowrap;
+    font-size: 9pt;
+}
+
+.vertical-label-title {
+    -webkit-transform: rotate(-90deg);
+    -moz-transform:    rotate(-90deg);
+    -ms-transform:     rotate(-90deg);
+    -o-transform:      rotate(-90deg);
+    transform:         rotate(-90deg);
+    position: relative;
+    top:-100px;
+    left: -12px;
+    z-index:1;
+    font-size: 9pt;
+    color:grey;
+    white-space:nowrap;
+}
+.vertical-label-bottom {
+    clear:left;
+    top:20px;
+    left:-12px;
+}
+
+.vertical-slider {
+    float: left;
+    clear:left;
+    font-size: 9pt;
+}

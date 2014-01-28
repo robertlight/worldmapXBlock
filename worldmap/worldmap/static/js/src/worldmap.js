@@ -56,11 +56,29 @@ function WorldMapXBlock(runtime, element) {
                         position: 'absolute',
                         top: top,
                         left: left,
+                        'z-index': 3,
                         border:0
                     }).hide();
 
+                    var title = $('<div class="slider-title"/>').text(sliderSpec.title).show();
+
                     var ctrl = document.createElement("div");
+                    var titleLabel = document.createElement("div");
+                    var endLabel = document.createElement("div");
+                    var sliderCtrl = document.createElement("div");
+
                     var orientation = (sliderSpec.position == "right" || sliderSpec.position == "left") ? "vertical" : "horizontal";
+                    if( orientation == "horizontal" ) {
+                        $(titleLabel).text(sliderSpec.min).appendTo(ctrl);
+                        $(sliderCtrl).appendTo(ctrl);
+                        $(endLabel).text(sliderSpec.max).appendTo(ctrl);
+                    } else {
+                        $(title).addClass("vertical-label-title");
+                        $(ctrl).css({float:'left', height:'100%', width:'40px'});
+                        $(endLabel).addClass("vertical-label").text(sliderSpec.max).appendTo(ctrl);
+                        $(sliderCtrl).addClass("vertical-slider").appendTo(ctrl);
+                        $(titleLabel).addClass("vertical-label").addClass("vertical-label-bottom").text(sliderSpec.min).appendTo(ctrl);
+                    }
 
                     var handler = function(e) {
                         var tooltip = $(e.target).find(".slider-tooltip");
@@ -72,7 +90,7 @@ function WorldMapXBlock(runtime, element) {
                     }
 
 
-                    $(ctrl).attr("id","slider-"+sliderSpec.id).slider({
+                    $(sliderCtrl).attr("id","slider-"+sliderSpec.id).slider({
                         value: sliderSpec.min,
                         min:   sliderSpec.min,
                         max:   sliderSpec.max,
@@ -103,6 +121,9 @@ function WorldMapXBlock(runtime, element) {
                       .find(".ui-slider-handle")
                       .append(tooltip)
                       .hover(handler);
+
+                    $(title).appendTo(ctrl);
+
                     $(ctrl).appendTo($('.sliders-'+sliderSpec.position,element));
                 }
              }
