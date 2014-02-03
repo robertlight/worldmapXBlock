@@ -24,6 +24,9 @@ function WorldMapXBlock(runtime, element) {
                })
            );
         }
+
+        selectLayer(true,$('.frame',element).attr("baseLayer"));
+
 //        if( $('.layerData',element).text() != "{}" ) {
 //           MESSAGING.getInstance().send(
 //               getUniqueId(),
@@ -237,11 +240,29 @@ function WorldMapXBlock(runtime, element) {
 
     function on_changeLayer(el, json) {
         var layer = JSON.parse(json);
+
+        var legendData = layer.legendData;
+        var legendUrl = null;
+        if( legendData ) {
+            legendUrl = legendData.url+"?TRANSPARENT=TRUE&EXCEPTIONS=application%2Fvnd.ogc.se_xml&VERSION=1.1.1&SERVICE=WMS&REQUEST=GetLegendGraphic&TILED=true&LAYER="
+                                    + legendData.name+"&STYLE="+legendData.styles+"&transparent=true&format=image%2Fpng&legend_options=fontAntiAliasing%3Atrue";
+        }
+
         $(".layerControls",el).dynatree("getRoot").visit( function(node) {
             if( node.data.key == layer.id ) {
                 node.select(layer.visibility);
+                if( legendUrl ) {
+                    $(node.span).tooltip( {items: "a", content: '<img src="'+legendUrl+'" />'});
+                }
             }
         });
+
+        if( $('.frame',el).attr('debug') ) {
+            if( layer.visibility ) {
+                $(".layerIdInfo",el).text(layer.id);
+            }
+        }
+
         var useOpacityControls = $('.frame', element).attr('opacityControls');
         if( useOpacityControls && useOpacityControls.toLowerCase() == 'true' ) {
             var id = "layerOpacityCtrl_"+layer.id.replace((/[\. ]/g),'_');
@@ -296,6 +317,7 @@ function WorldMapXBlock(runtime, element) {
 
     $(function ($) {
         console.log("initialize on page load");
+//        $(document).tooltip();
         /* Here's where you'd do things on page load. */
     });
 }

@@ -27,6 +27,10 @@ class WorldMapXBlock(XBlock):
     )
 
     href = String(help="URL of the worldmap page at the provider", default=None, scope=Scope.content)
+    baseLayer = String(help="id of base layer", default=None, scope=Scope.content)
+    width= Integer(help="width of map", default=750)
+    height=Integer(help="height of map", default=550)
+    debug =Boolean(help="enable the debug pane", default=False)
 
     testLatitude = Float(help="latitude of test location point", default=None)
     testLongitude= Float(help="longitude of test location point", default=None)
@@ -219,6 +223,9 @@ class WorldMapXBlock(XBlock):
 
         return True
 
+
+    #<worldmap href='http://23.21.172.243/maps/bostoncensus/embed?' opacityControls='false' baseLayer='OpenLayers_Layer_Bing_92'>
+    #<worldmap href='https://worldmap.harvard.edu/maps/chinaX/embed?' opacityControls='false' baseLayer='OpenLayers_Layer_Bing_92'>
     # TO-DO: change this to create the scenarios you'd like to see in the
     # workbench while developing your XBlock.
     @staticmethod
@@ -228,8 +235,9 @@ class WorldMapXBlock(XBlock):
             ("WorldMapXBlock",
              """
                 <vertical_demo>
-                <worldmap href='http://23.21.172.243/maps/bostoncensus/embed?' opacityControls='false'>
+                <worldmap href='http://23.21.172.243/maps/bostoncensus/embed?' debug='true' width='600' height='400' opacityControls='false' baseLayer='OpenLayers_Layer_OSM_90'>
                    <layers>
+                      <layer id="geonode:qing_charity_v1_mzg"/>
                       <layer id="OpenLayers_Layer_WMS_122">
                          <param name="CensusYear" value="1972"/>
                       </layer>
@@ -247,6 +255,9 @@ class WorldMapXBlock(XBlock):
                       </layer>
                    </layers>
                    <group-control name="Census Data" visible="true">
+                      <layer-control layerid="OpenLayers_Layer_WMS_310" visible="true" name="Coastline"/>
+                      <layer-control layerid="OpenLayers_Layer_WMS_308" visible="true" name="Yellow River"/>
+                      <layer-control layerid="OpenLayers_Layer_WMS_306" visible="true" name="7 Capitals of the Shang Dynasty"/>
                       <layer-control layerid="OpenLayers_Layer_WMS_122" visible="true" name="layerA"/>
                       <layer-control layerid="OpenLayers_Layer_WMS_124" visible="true" name="layerB"/>
                       <layer-control layerid="OpenLayers_Layer_WMS_120" visible="false" name="layerC"/>
@@ -271,9 +282,11 @@ class WorldMapXBlock(XBlock):
 
                    <sliders>
                       <slider id="timeSlider" title="A" param="CensusYear" min="1972" max="1980" incr="0.2" position="left"/>
+                      <slider id="timeSlider7" title="Abcdefg" param="CensusYear" min="1972" max="1980" incr="0.2" position="left"/>
                       <slider id="timeSlider2" title="B" param="CensusYear" min="1972" max="1980" incr="0.2" position="right"/>
                       <slider id="timeSlider6" title="Now is the time for" param="CensusYear" min="1972" max="1980" incr="0.2" position="right"/>
                       <slider id="timeSlider3" title="Hello world" param="CensusYear" min="1972" max="1980" incr="0.2" position="top"/>
+                      <slider id="timeSlider8" title="Hello world12345" param="CensusYear" min="1972" max="1980" incr="0.2" position="top"/>
                       <slider id="timeSlider4" title="Now is the time for all good men" param="CensusYear" min="1972" max="1980" incr="0.2" position="bottom"/>
                       <slider id="timeSlider5" title="to come to the aid of their country" param="CensusYear" min="1972" max="1980" incr="0.2" position="bottom"/>
                     </sliders>
@@ -284,7 +297,7 @@ class WorldMapXBlock(XBlock):
                         <p>Please click on the location of <i>Timbuktu</i></p>
                     </html_demo>
 
-                    <worldmap name='worldmap' href='http://23.21.172.243/maps/bostoncensus/embed?' opacityControls='true' testLatitude='16.775800549402906' testLongitude='-3.0166396836062104' testRadius='10000'/>
+                    <worldmap name='worldmap' href='http://23.21.172.243/maps/bostoncensus/embed?' width='800' height='600' opacityControls='true' testLatitude='16.775800549402906' testLongitude='-3.0166396836062104' testRadius='10000'/>
                 </problem_demo>
                 </vertical_demo>
              """
