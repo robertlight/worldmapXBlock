@@ -177,7 +177,9 @@ function WorldMapXBlock(runtime, element) {
                 }, true);
             }
         });
-
+//        tree.visit(function(node){
+//             node.expand(false);
+//        });
     });
 
     var layerVisibilityCache = [];
@@ -249,6 +251,10 @@ function WorldMapXBlock(runtime, element) {
         }
 
         $(".layerControls",el).dynatree("getRoot").visit( function(node) {
+            if( !node.isExpanded() ) { //if it isn't expanded, we need to expand/contract it so that all the children get loaded
+                node.expand(true);
+                node.expand(false);
+            }
             if( node.data.key == layer.id ) {
                 node.select(layer.visibility);
                 if( legendUrl ) {

@@ -54,10 +54,16 @@
     border:0;
 }
 .vertical-slider-container {
-    float:left;
+    float:right;
     width:40px;
 }
 
+.sliders-right {
+    white-space:nowrap;
+}
+.sliders-left {
+    white-space:nowrap;
+}
 .vertical-slider {
     float: left;
     clear:left;
