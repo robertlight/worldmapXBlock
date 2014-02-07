@@ -6,3 +6,4 @@ from .worldmap import GroupControlBlock
 from .worldmap import LayerControlBlock
 from .worldmap import SlidersBlock
 from .worldmap import SliderBlock
+from .worldmap import HelpBlock

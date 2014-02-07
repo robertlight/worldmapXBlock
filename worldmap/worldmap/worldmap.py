@@ -9,6 +9,7 @@ import math
 from xblock.core import XBlock
 from xblock.fields import Scope, Integer, Any, String, Float, Dict, Boolean,List
 from xblock.fragment import Fragment
+from lxml import etree
 
 log = logging.getLogger(__name__)
 
@@ -123,10 +124,11 @@ class WorldMapXBlock(XBlock):
                    'id':   slider.id,
                    'min':  slider.min,
                    'max':  slider.max,
-                   'incr': slider.incr,
+                   'increment': slider.increment,
                    'position': slider.position,
                    'param': slider.param,
-                   'title': slider.title
+                   'title': slider.title,
+                   'help':  slider.help
                 })
         return result
 
@@ -281,14 +283,19 @@ class WorldMapXBlock(XBlock):
                    </group-control>
 
                    <sliders>
-                      <slider id="timeSlider" title="A" param="CensusYear" min="1972" max="1980" incr="0.2" position="left"/>
-                      <slider id="timeSlider7" title="Abcdefg" param="CensusYear" min="1972" max="1980" incr="0.2" position="left"/>
-                      <slider id="timeSlider2" title="B" param="CensusYear" min="1972" max="1980" incr="0.2" position="right"/>
-                      <slider id="timeSlider6" title="Now is the time for" param="CensusYear" min="1972" max="1980" incr="0.2" position="right"/>
-                      <slider id="timeSlider3" title="Hello world" param="CensusYear" min="1972" max="1980" incr="0.2" position="top"/>
-                      <slider id="timeSlider8" title="Hello world12345" param="CensusYear" min="1972" max="1980" incr="0.2" position="top"/>
-                      <slider id="timeSlider4" title="Now is the time for all good men" param="CensusYear" min="1972" max="1980" incr="0.2" position="bottom"/>
-                      <slider id="timeSlider5" title="to come to the aid of their country" param="CensusYear" min="1972" max="1980" incr="0.2" position="bottom"/>
+                      <slider id="timeSlider" title="A" param="CensusYear" min="1972" max="1980" increment="0.2" position="left"/>
+                      <slider id="timeSlider7" title="Abcdefg" param="CensusYear" min="1972" max="1980" increment="0.2" position="left"/>
+                      <slider id="timeSlider2" title="B" param="CensusYear" min="1972" max="1980" increment="0.2" position="right"/>
+                      <slider id="timeSlider6" title="Now is the time for" param="CensusYear" min="1972" max="1980" increment="0.2" position="right"/>
+                      <slider id="timeSlider3" title="Hello world" param="CensusYear" min="1972" max="1980" increment="0.2" position="top"/>
+                      <slider id="timeSlider8" title="Hello world12345" param="CensusYear" min="1972" max="1980" increment="0.2" position="top"/>
+                      <slider id="timeSlider4" title="Now is the time for all good men" param="CensusYear" min="1972" max="1980" increment="0.2" position="bottom"/>
+                      <slider id="timeSlider5" title="to come to the aid of their country" param="CensusYear" min="1972" max="1980" increment="0.2" position="bottom">
+                         <help>
+                             <B>Hello World</B><br/>
+                             second line of text here
+                         </help>
+                      </slider>
                     </sliders>
                 </worldmap>
 
@@ -336,9 +343,28 @@ class SliderBlock(XBlock):
     param = String(help="the param the slider controls", default=None, scope=Scope.content)
     min = Float(help="the minimum value of the slider", default=None, scope=Scope.content)
     max = Float(help="the maximum value of the slider", default=None, scope=Scope.content)
-    incr= Float(help="increment value for the slider", default=None, scope=Scope.content)
+    increment= Float(help="increment value for the slider", default=None, scope=Scope.content)
     position=String(help="position of slider.  Values: top,bottom,left,right", default="bottom", scope=Scope.content)
     title=String(help="title/label for slider",default=None, scope=Scope.content)
+
+    #@classmethod
+    #def parse_xml(cls, node, runtime, keys, id_generator):
+    #    block = runtime.construct_xblock_from_class(cls, keys)
+    #
+    #    # Attributes become fields.
+    #    for name, value in node.items():
+    #        if name in block.fields:
+    #            setattr(block, name, value)
+    #
+    #    # Find <help> children, turn them into help-text content.
+    #    for child in node:
+    #        if child.tag == "help":
+    #            block.help += child.text
+    #        else:
+    #            block.runtime.add_node_as_child(block, child, id_generator)
+    #
+    #    return block
+
 
     @property
     def params(self):
@@ -349,6 +375,14 @@ class SliderBlock(XBlock):
                 params.append(child)
         return params
 
+    @property
+    def help(self):
+        for child_id in self.children:  # pylint: disable=E1101
+            child = self.runtime.get_block(child_id)
+            if isinstance(child, HelpBlock):
+                return child.content
+        return None
+
     def problem_view(self, context=None):
         """
         has no visible rendering
@@ -356,6 +390,40 @@ class SliderBlock(XBlock):
         pass
 
     student_view = problem_view
+
+
+class HelpBlock(XBlock):
+    """An XBlock that contains help-text for a slider."""
+
+    content = String(help="The HTML to display", scope=Scope.content, default=u"")
+
+    @classmethod
+    def parse_xml(cls, node, runtime, keys, id_generator):
+        """
+        Parse the XML for an HTML block.
+
+        The entire subtree under `node` is re-serialized, and set as the
+        content of the XBlock.
+
+        """
+        block = runtime.construct_xblock_from_class(cls, keys)
+
+        block.content = unicode(node.text or u"")
+        for child in node:
+            block.content += etree.tostring(child, encoding='unicode')
+
+        return block
+
+    def problem_view(self, context=None):
+        """
+        has no visible rendering
+        """
+        pass
+
+    student_view = problem_view
+
+
+
 
 class LayersBlock(XBlock):
     """An XBlock that records the layer definitions."""

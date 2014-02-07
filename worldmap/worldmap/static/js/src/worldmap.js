@@ -55,10 +55,12 @@ function WorldMapXBlock(runtime, element) {
                         top=-15;
                     }
 
-                    var tooltip = $('<div class="slider-tooltip" />').css({
+                    var tooltip = $('<div class="slider-thumb-value" />').css({
                         top: top,
                         left: left
                     }).hide();
+
+                    var help = $('<div class="slider-help" />').text(sliderSpec.help).hide();
 
                     var title = $('<div class="slider-title"/>').text(sliderSpec.title).show();
 
@@ -83,7 +85,7 @@ function WorldMapXBlock(runtime, element) {
                     }
 
                     var handler = function(e) {
-                        var tooltip = $(e.target).find(".slider-tooltip");
+                        var tooltip = $(e.target).find(".slider-thumb-value");
                         if(e.type == "mouseenter") {
                             tooltip.show()
                         } else {
@@ -91,16 +93,15 @@ function WorldMapXBlock(runtime, element) {
                         }
                     }
 
-
                     $(sliderCtrl).attr("id","slider-"+sliderSpec.id).slider({
                         value: sliderSpec.min,
                         min:   sliderSpec.min,
                         max:   sliderSpec.max,
-                        step:  sliderSpec.incr,
+                        step:  sliderSpec.increment,
                         orientation: orientation,
                         animate: "fast",
                         slide: function(e, ui) {
-                            $(this).find(".ui-slider-handle .slider-tooltip").text(ui.value);
+                            $(this).find(".ui-slider-handle .slider-thumb-value").text(ui.value);
 
                             var layerSpecs = window.worldmapLayerSpecs[getUniqueId()];
                             for (var i=0; i<layerSpecs.length; i++) {
@@ -122,7 +123,17 @@ function WorldMapXBlock(runtime, element) {
                     }).css(orientation == "vertical" ? {height:250} : {width:250})
                       .find(".ui-slider-handle")
                       .append(tooltip)
+                      .append(help)
                       .hover(handler);
+
+                    $(ctrl).hover( function(e) {
+                        var obj = $(e.target).find(".slider-help");
+                        if(e.type == "mouseenter") {
+                            obj.show()
+                        } else {
+                            obj.hide()
+                        }
+                    });
 
                     $(title).appendTo(ctrl);
 
@@ -301,7 +312,8 @@ function WorldMapXBlock(runtime, element) {
                             }
                         });
                     }
-                });
+                }).draggable(); //use touch-punch hack for touch screen compatibility
+
                 ctrl.appendTo($('#layerControl-'+layer.id.replace((/[\. ]/g),'_')));
             } else if( !layer.visibility && $('#'+id,el).length > 0 ) {
               //  console.log("Removing control for id: "+layer.id);

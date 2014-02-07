@@ -2,8 +2,8 @@
 <worldmap href="blah" opacityControls="true/false">
     <layers>
         <layer id="..." >  <!-- zero or more layer tags -->
-            <param name="..." value="...."/>   <!-- value can be a number or a number range 100:200 -->
-            <param name="..." value="...."/>ins
+            <param name="..." value="...."  |  min="..." max="..." />   <!-- value or min & max but not both -->
+            <param name="..." value="...."/>
         </layer>
         ....
     </layers>
@@ -27,7 +27,7 @@
     </group>
 
     <sliders> <!-- zero or more slider controls -->
-        <slider id="..." type="single|range" param="...paramNameHere..." min="..." max="..." location="bottom|top|left|right" step="...">
+        <slider id="..." position="left|right|top|bottom" param="...paramNameHere..." min="..." max="..."  step="...">
             <help>
                 <!-- html help text displayed in mouseover tooltip -->
             </help>....

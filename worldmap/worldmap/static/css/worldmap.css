@@ -48,11 +48,19 @@
     left:-7px;
 }
 
-.slider-tooltip {
+.slider-thumb-value {
     position: absolute;
     z-index: 3;
     border:0;
 }
+.slider-help {
+    position: absolute;
+    z-index: 3;
+    border:0;
+    top: 25;
+    left:10;
+}
+
 .vertical-slider-container {
     float:right;
     width:40px;

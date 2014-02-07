@@ -1,0 +1,8 @@
+JQuery
+JQuery-ui
+Dynatree
+
+
+Touch Punch
+    website:  http://touchpunch.furf.com/
+    license:  MIT & GPLv2
