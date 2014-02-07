@@ -285,15 +285,32 @@ class WorldMapXBlock(XBlock):
                    <sliders>
                       <slider id="timeSlider" title="A" param="CensusYear" min="1972" max="1980" increment="0.2" position="left"/>
                       <slider id="timeSlider7" title="Abcdefg" param="CensusYear" min="1972" max="1980" increment="0.2" position="left"/>
-                      <slider id="timeSlider2" title="B" param="CensusYear" min="1972" max="1980" increment="0.2" position="right"/>
-                      <slider id="timeSlider6" title="Now is the time for" param="CensusYear" min="1972" max="1980" increment="0.2" position="right"/>
+                      <slider id="timeSlider2" title="B" param="CensusYear" min="1972" max="1980" increment="0.2" position="right">
+                         <help>
+                            <B>ABC</B><br/>
+                            <i>yippity doo dah</i>
+                         </help>
+                      </slider>
+                      <slider id="timeSlider6" title="Now is the time for" param="CensusYear" min="1972" max="1980" increment="0.2" position="right">
+                         <help>
+                             <B>This can be any html</B><br/>
+                             <i>you can use to create help info for using the slider</i><br/>
+                             <b>You can even include images:</b>
+                             <img src="http://static.adzerk.net/Advertisers/bc85dff2b3dc44ddb9650e1659b1ad1e.png"/>
+                         </help>
+                      </slider>
                       <slider id="timeSlider3" title="Hello world" param="CensusYear" min="1972" max="1980" increment="0.2" position="top"/>
                       <slider id="timeSlider8" title="Hello world12345" param="CensusYear" min="1972" max="1980" increment="0.2" position="top"/>
                       <slider id="timeSlider4" title="Now is the time for all good men" param="CensusYear" min="1972" max="1980" increment="0.2" position="bottom"/>
                       <slider id="timeSlider5" title="to come to the aid of their country" param="CensusYear" min="1972" max="1980" increment="0.2" position="bottom">
                          <help>
-                             <B>Hello World</B><br/>
-                             second line of text here
+                             <B>This is some generalized html</B><br/>
+                             <i>you can use to create help info for using the slider</i>
+                             <ul>
+                                <li>You can explain what it does</li>
+                                <li>How to interpret things</li>
+                                <li>What other things you might be able to do</li>
+                             </ul>
                          </help>
                       </slider>
                     </sliders>

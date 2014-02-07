@@ -60,7 +60,7 @@ function WorldMapXBlock(runtime, element) {
                         left: left
                     }).hide();
 
-                    var help = $('<div class="slider-help" />').text(sliderSpec.help).hide();
+
 
                     var title = $('<div class="slider-title"/>').text(sliderSpec.title).show();
 
@@ -70,6 +70,9 @@ function WorldMapXBlock(runtime, element) {
                     var sliderCtrl = document.createElement("div");
 
                     var orientation = (sliderSpec.position == "right" || sliderSpec.position == "left") ? "vertical" : "horizontal";
+//                    var helpTop = orientation=="vertical"?0:0;
+//                    var helpLeft= orientation=="vertical"?0:0;
+
                     if( orientation == "horizontal" ) {
                         $(ctrl).addClass("horizontal-slider");
                         $(startLabel).addClass("horizontal-label").addClass("horizontal-label-left").text(sliderSpec.min).appendTo(ctrl);
@@ -83,6 +86,11 @@ function WorldMapXBlock(runtime, element) {
                         $(sliderCtrl).addClass("vertical-slider").appendTo(ctrl);
                         $(startLabel).addClass("vertical-label").addClass("vertical-label-bottom").text(sliderSpec.min).appendTo(ctrl);
                     }
+
+//                    var help = $('<div class="slider-help" />').text(sliderSpec.help).css({
+//                        top: helpTop,
+//                        left: helpLeft
+//                    }).hide();
 
                     var handler = function(e) {
                         var tooltip = $(e.target).find(".slider-thumb-value");
@@ -123,17 +131,18 @@ function WorldMapXBlock(runtime, element) {
                     }).css(orientation == "vertical" ? {height:250} : {width:250})
                       .find(".ui-slider-handle")
                       .append(tooltip)
-                      .append(help)
                       .hover(handler);
 
-                    $(ctrl).hover( function(e) {
-                        var obj = $(e.target).find(".slider-help");
-                        if(e.type == "mouseenter") {
-                            obj.show()
-                        } else {
-                            obj.hide()
-                        }
-                    });
+//                    $('.ui-slider',ctrl).tooltip({content: sliderSpec.help});
+                    $(title).tooltip({ items:"div",content: sliderSpec.help, position: {my: 'left center', at: 'right+10 center'}});
+//                    $('.ui-slider', ctrl).hover( function(e) {
+//                        var obj = $(e.target).find(".slider-help");
+//                        if(e.type == "mouseenter") {
+//                            obj.show()
+//                        } else {
+//                            obj.hide()
+//                        }
+//                    });
 
                     $(title).appendTo(ctrl);
 
@@ -335,7 +344,7 @@ function WorldMapXBlock(runtime, element) {
 
     $(function ($) {
         console.log("initialize on page load");
-//        $(document).tooltip();
+  //      $(document).tooltip();
         /* Here's where you'd do things on page load. */
     });
 }

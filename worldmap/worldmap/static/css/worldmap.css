@@ -54,11 +54,9 @@
     border:0;
 }
 .slider-help {
-    position: absolute;
+    position: relative;
     z-index: 3;
     border:0;
-    top: 25;
-    left:10;
 }
 
 .vertical-slider-container {
