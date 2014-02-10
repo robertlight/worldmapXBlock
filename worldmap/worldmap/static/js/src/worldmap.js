@@ -134,7 +134,9 @@ function WorldMapXBlock(runtime, element) {
                       .hover(handler);
 
 //                    $('.ui-slider',ctrl).tooltip({content: sliderSpec.help});
-                    $(title).tooltip({ items:"div",content: sliderSpec.help, position: {my: 'left center', at: 'right+10 center'}});
+                    if( sliderSpec.help != null) {
+                        $(title).tooltip({ items:"div",content: sliderSpec.help, position: {my: 'left center', at: 'right+10 center'}});
+                    }
 //                    $('.ui-slider', ctrl).hover( function(e) {
 //                        var obj = $(e.target).find(".slider-help");
 //                        if(e.type == "mouseenter") {

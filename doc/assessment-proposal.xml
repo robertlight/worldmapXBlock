@@ -19,11 +19,19 @@
 <multi-target padding="10">
     <answer id="uniqId1"   color="#FF0000" type="point|polygon|polyline" percentAnswerInsidePaddedGeometry="100" percentGeometryInsidePaddedAnswer="100">
         <geometry>
-        </geometry
+        </geometry>
         <constraints>
-            <overlap id="otherUniqId" minPercentOverlap="20" maxPercentOverlap="50"/>  <!-- use maxPercentOverlap="0" to define NO-overlap -->
+            <overlap id="otherUniqId" minPercentOverlap="20" maxPercentOverlap="50">  <!-- use maxPercentOverlap="0" to define NO-overlap -->
+               <explanation>
+                   <!-- html to explain that this answer must overlap by a certain amount the area sketched as 'otherUniqId' -->
+               </explanation>
+            </overlap>
             .... <!-- zero-or-more overlap constraints  -->
-            <heading id="otherUniqId" degrees="90"/>  <!-- center of area relative to otherUniqId's center of area in degrees CW from NORTH -->
+            <heading id="otherUniqId" degrees="90">  <!-- center of area relative to otherUniqId's center of area in degrees CW from NORTH -->
+               <explanation>
+                   <!-- html to explain that this answer must be a particular heading away from the user's 'otherUniqId' sketch -->
+               </explanation>
+            </heading>
             .... <!-- zero-or-more heading constraints -->
             <relative-size id="otherUniqId" minPercentArea="20" maxPercentArea="50"/> <!-- ie: must be 20-50% of otherUniqId's area -->
             <excludes>
@@ -31,12 +39,18 @@
 
                 </geometry>
                 .... <!-- specify one-or-more geometry tags that it must exclude -->
+                <explanation>
+                    <!-- html to explain why answer must exclude these areas -->
+                </explanation>
             </excludes>
             <includes>
                 <geometry>
 
                 </geometry>
                 .... <!-- specify one-or-more geometry tags that it must include -->
+                <explanation>
+                    <!-- html to explain wy answer must include this area -->
+                </explanation>
             </includes>
         </constraints>
     </answer>
@@ -80,11 +94,12 @@
         <point lat="" lon=""/>
 
 <!-- other types of answers -->
-        <answer type="polygon" insidePercentCoverageRequired="70%"  minimumOutsidePercent="20%"/>
+        <answer type="polygon" insidePercentCoverageRequired="70"  minimumOutsidePercent="20"/>
         <!-- geometry must be a polygon.
              polygon answer is deemed correct if polygon covers insidePercentCoverageRequired of the polygon geometry
              and less than minimumOutsidePercent outside the polygon geometry
         -->
         <answer type="polyline" error="10"/> <!-- error is in meters -->
         <!-- if geometry must be a polyline
-             answer is deemed correct if
+             answer is deemed correct if user's polyline is inside the geometry of this polyline (expanded by error all around)
+

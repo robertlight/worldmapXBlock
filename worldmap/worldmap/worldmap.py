@@ -237,7 +237,7 @@ class WorldMapXBlock(XBlock):
             ("WorldMapXBlock",
              """
                 <vertical_demo>
-                <worldmap href='http://23.21.172.243/maps/bostoncensus/embed?' debug='true' width='600' height='400' opacityControls='false' baseLayer='OpenLayers_Layer_OSM_90'>
+                <worldmap href='http://23.21.172.243/maps/bostoncensus/embed?' debug='true' width='600' height='400' opacityControls='false' baseLayer='OpenLayers_Layer_Google_116'>
                    <layers>
                       <layer id="geonode:qing_charity_v1_mzg"/>
                       <layer id="OpenLayers_Layer_WMS_122">
@@ -257,8 +257,6 @@ class WorldMapXBlock(XBlock):
                       </layer>
                    </layers>
                    <group-control name="Census Data" visible="true">
-                      <layer-control layerid="OpenLayers_Layer_WMS_310" visible="true" name="Coastline"/>
-                      <layer-control layerid="OpenLayers_Layer_WMS_308" visible="true" name="Yellow River"/>
                       <layer-control layerid="OpenLayers_Layer_WMS_306" visible="true" name="7 Capitals of the Shang Dynasty"/>
                       <layer-control layerid="OpenLayers_Layer_WMS_122" visible="true" name="layerA"/>
                       <layer-control layerid="OpenLayers_Layer_WMS_124" visible="true" name="layerB"/>
@@ -321,7 +319,49 @@ class WorldMapXBlock(XBlock):
                         <p>Please click on the location of <i>Timbuktu</i></p>
                     </html_demo>
 
-                    <worldmap name='worldmap' href='http://23.21.172.243/maps/bostoncensus/embed?' width='800' height='600' opacityControls='true' testLatitude='16.775800549402906' testLongitude='-3.0166396836062104' testRadius='10000'/>
+                    <worldmap name='worldmap' href='http://worldmap.harvard.edu/maps/chinaX/embed?' width='800' height='600' opacityControls='true' testLatitude='16.775800549402906' testLongitude='-3.0166396836062104' testRadius='10000' debug="true">
+                       <layers>
+                          <layer id="OpenLayers_Layer_WMS_276">
+                             <param name="EastAsiaTribes" min="449" max="545"/>
+                          </layer>
+                          <layer id="OpenLayers_Layer_WMS_274">
+                             <param name="EastAsiaTribes" min="546" max="571"/>
+                          </layer>
+                          <layer id="OpenLayers_Layer_WMS_320">
+                             <param name="EastAsiaTribes" min="73" max="261"/>
+                          </layer>
+                          <layer id="OpenLayers_Layer_WMS_324">
+                             <param name="EastAsiaTribes" min="-82" max="72"/>
+                          </layer>
+                          <layer id="OpenLayers_Layer_WMS_294">
+                             <param name="EastAsiaTribes" min="262" max="280"/>
+                          </layer>
+                          <layer id="OpenLayers_Layer_WMS_292">
+                             <param name="EastAsiaTribes" min="281" max="326"/>
+                          </layer>
+                          <layer id="OpenLayers_Layer_WMS_288">
+                             <param name="EastAsiaTribes" min="327" max="448"/>
+                          </layer>
+                          <layer id="OpenLayers_Layer_WMS_272">
+                             <param name="EastAsiaTribes" value="572"/>
+                          </layer>
+                       </layers>
+                       <sliders>
+                          <slider id="EastAsiaTribes" title="East Asia Tribes" param="EastAsiaTribes" min="-82" max="572" incr="1" position="bottom">
+                             <help>
+                                <b>East Asia Tribes migration patterns</b>
+                                From 82BCE through 572CE
+                             </help>
+                          </slider>
+                       </sliders>
+                       <group-control name="ChinaX layers">
+                          <group-control name="geography">
+                            <layer-control layerid="OpenLayers_Layer_WMS_332" name="Coastline1"/>
+                            <layer-control layerid="OpenLayers_Layer_WMS_330" name="Yellow River"/>
+                            <layer-control layerid="OpenLayers_Layer_WMS_232" name="Major Rivers"/>
+                          </group-control>
+                       </group-control>
+                    </worldmap>
                 </problem_demo>
                 </vertical_demo>
              """

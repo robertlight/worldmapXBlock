@@ -46,16 +46,27 @@ var app;
                 trigger: function(e) {
                     var map = e.object;
                     var lonlat = map.getLonLatFromPixel(e.xy);
-
                     var Geographic  = new OpenLayers.Projection("EPSG:4326"); 
                     var Mercator = new OpenLayers.Projection("EPSG:900913");
                     var point = new OpenLayers.Geometry.Point(lonlat.lon, lonlat.lat).transform(Mercator, Geographic);
                     MESSAGING.getInstance().send(new Message("click",point));
-
-//alert("you clicked ("+point.y+","+point.x+")");
                 }
-            });
+	    });
 
+function getLayerLegendInfo( layers, layer ) {
+   for( var i=0; i<layers.length; i++ ) {
+      if( layers[i].styles ) {
+         if( layers[i].title == layer.name ) {
+             return {
+                        styles: layers[i].styles,
+                        name:   layers[i].name,
+                        url:    layers[i].url,
+                    }
+         }
+      }
+   }
+   return null;
+}
 
 Ext.onReady(function() {
 {% autoescape off %}
@@ -97,15 +108,13 @@ Ext.onReady(function() {
          */
         rest: "/maps/"
     };
-//console.log("----------------------------------------------");
-//console.log("config = "+JSON.stringify(config));
 
     Ext.apply(config, {{ config }});
       
     
     app = new GeoExplorer.Viewer(config);
 //console.log("==============================================");
-//console.log("config = "+JSON.stringify(config));
+//console.log("app.config.map.layers = "+JSON.stringify(app.config.map.layers));
 //console.log("==============================================");
 
     MESSAGING.getInstance().registerHandler("info", function(m) { alert("the slave code received this 'info' message: "+m.getMessage()); });
@@ -121,8 +130,7 @@ Ext.onReady(function() {
         });
 
         app.mapPanel.map.events.register("changelayer", app.mapPanel.map, function(e) {
-//            console.log("changelayer event: id: "+e.layer.id+"   name: "+e.layer.name);
-            MESSAGING.getInstance().send(new Message("changelayer", {name: e.layer.name, id:e.layer.id, visibility:e.layer.visibility,opacity:e.layer.opacity}));
+            MESSAGING.getInstance().send(new Message("changelayer", {name: e.layer.name, id:e.layer.id, visibility:e.layer.visibility,opacity:e.layer.opacity, legendData: getLayerLegendInfo(app.config.map.layers, e.layer)}));
         }); 
 //	app.mapPanel.map.events.register("changebaselayer", app.mapPanel.map, function(e) {
 //            console.log("changebaselayer event:   id: "+e.layer.id+"   name: "+e.layer.name);
