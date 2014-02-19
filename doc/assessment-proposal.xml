@@ -5,45 +5,27 @@
    whether or not that input is correct or not.
 -->
 
-<simple-target padding="10"><!-- padding: #meters of padding around geometry-->
-    <answer type="point|polygon|polyline" percentAnswerInsidePaddedGeometry="100" percentGeometryInsidePaddedAnswer="100">
-        <geometry>
-            <point lat="42.00" lon="-73.23"/>
-        </geometry>
-    </answer>
-    <explanation>
-        <!-- html that gets displayed along with the geometry displayed in the map (map scrolls and zooms to make geometry visible -->
-    </explanation>
-</simple-target>
-
-<multi-target padding="10">
-    <answer id="uniqId1"   color="#FF0000" type="point|polygon|polyline" percentAnswerInsidePaddedGeometry="100" percentGeometryInsidePaddedAnswer="100">
-        <geometry>
-        </geometry>
+<assessment padding="10">
+    <worldmap .... />
+    <answer id="uniqId1" color="#FF0000" type="point|polygon|polyline|directed-polyline" >
         <constraints>
-            <overlap id="otherUniqId" minPercentOverlap="20" maxPercentOverlap="50">  <!-- use maxPercentOverlap="0" to define NO-overlap -->
-               <explanation>
-                   <!-- html to explain that this answer must overlap by a certain amount the area sketched as 'otherUniqId' -->
-               </explanation>
-            </overlap>
-            .... <!-- zero-or-more overlap constraints  -->
-            <heading id="otherUniqId" degrees="90">  <!-- center of area relative to otherUniqId's center of area in degrees CW from NORTH -->
-               <explanation>
-                   <!-- html to explain that this answer must be a particular heading away from the user's 'otherUniqId' sketch -->
-               </explanation>
-            </heading>
-            .... <!-- zero-or-more heading constraints -->
-            <relative-size id="otherUniqId" minPercentArea="20" maxPercentArea="50"/> <!-- ie: must be 20-50% of otherUniqId's area -->
-            <excludes>
+            <matches percentOfGrade="25" percentAnswerInsidePaddedGeometry="100" percentGeometryInsidePaddedAnswer="100">
+                <geometry>
+                </geometry>
+                <explanation>
+                    <!-- html to explain that this answer match the particular geometry within allowed tolerance -->
+                </explanation>
+            </matches>
+            <excludes percentOfGrade="25" >
                 <geometry>
 
                 </geometry>
                 .... <!-- specify one-or-more geometry tags that it must exclude -->
                 <explanation>
-                    <!-- html to explain why answer must exclude these areas -->
+                    <!-- html to explain why answer must exclude this area -->
                 </explanation>
             </excludes>
-            <includes>
+            <includes percentOfGrade="25" >
                 <geometry>
 
                 </geometry>
@@ -52,19 +34,40 @@
                     <!-- html to explain wy answer must include this area -->
                 </explanation>
             </includes>
+
+
+            <!-- FUTURE ENHANCEMENT  - compare multiple answer 'parts' -->
+            <overlap id="otherUniqId" percentOfGrade="25" minPercentOverlap="20" maxPercentOverlap="50">  <!-- use maxPercentOverlap="0" to define NO-overlap -->
+               <explanation>
+                   <!-- html to explain that this answer must overlap by a certain amount the area sketched as 'otherUniqId' -->
+               </explanation>
+            </overlap>
+            .... <!-- zero-or-more overlap constraints  -->
+            <heading id="otherUniqId" degrees="90" percentOfGrade="25" >  <!-- center of area relative to otherUniqId's center of area in degrees CW from NORTH -->
+               <explanation>
+                   <!-- html to explain that this answer must be a particular heading away from the user's 'otherUniqId' sketch -->
+               </explanation>
+            </heading>
+            .... <!-- zero-or-more heading constraints -->
+            <relative-size id="otherUniqId" percentOfGrade="25" minPercentArea="20" maxPercentArea="50"/> <!-- ie: must be 20-50% of otherUniqId's area -->
+            <!-- ========================================================= -->
+
         </constraints>
     </answer>
-    <answer id="uniqId2" color="#00FF00" type="point|polygon|polyline" percentAnswerInsidePaddedGeometry="100" percentGeometryInsidePaddedAnswer="100"/>
-        <geometry>
-        </geometry>
+
+    <!-- FUTURE ENHANCEMENT - allow multiple parts of an answer -->
+    <answer id="uniqId2" color="#00FF00" type="point|polygon|polyline|directed-polyline" percentAnswerInsidePaddedGeometry="100" percentGeometryInsidePaddedAnswer="100">
         <constraints>
            ....
         </constraints>
     </answer>
+    <!-- ======================================================= -->
+
+
     <explanation>
         <!-- html to display to explain the proper answer -->
     </explanation>
-</multi-target>
+</assessment>
 
 <!--
    percentAnswerInsidePaddedGeometry is the amount of the answer geometry which must be inside the padded target geometry
@@ -91,15 +94,18 @@
            ....
         </polyline>
 
+        <directed-polyline ordered="true|false">  <!-- default:   ordered="false" -->
+           <vector>
+             <point lat=" " lon=" "/>  <!-- root of vector -->
+             <point lat=" " lon=" "/>  <!-- tip of vector -->
+           </vector>
+           <vector>
+             <point lat=" " lon=" "/>  <!-- root of vector -->
+             <point lat=" " lon=" "/>  <!-- tip of vector -->
+           </vector>
+           ....
+        </directed-polyline>
+
         <point lat="" lon=""/>
 
-<!-- other types of answers -->
-        <answer type="polygon" insidePercentCoverageRequired="70"  minimumOutsidePercent="20"/>
-        <!-- geometry must be a polygon.
-             polygon answer is deemed correct if polygon covers insidePercentCoverageRequired of the polygon geometry
-             and less than minimumOutsidePercent outside the polygon geometry
-        -->
-        <answer type="polyline" error="10"/> <!-- error is in meters -->
-        <!-- if geometry must be a polyline
-             answer is deemed correct if user's polyline is inside the geometry of this polyline (expanded by error all around)
 

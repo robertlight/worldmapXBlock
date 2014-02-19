@@ -261,9 +261,6 @@ class WorldMapXBlock(XBlock):
                       <layer-control layerid="OpenLayers_Layer_WMS_122" visible="true" name="layerA"/>
                       <layer-control layerid="OpenLayers_Layer_WMS_124" visible="true" name="layerB"/>
                       <layer-control layerid="OpenLayers_Layer_WMS_120" visible="false" name="layerC"/>
-                    """
-                    #  <layer-control layerid="OpenLayers_Layer_Bing_92" visible="false" name="layerD"/>
-                    +"""
                       <layer-control layerid="OpenLayers_Layer_WMS_118" visible="true" name="layerE"/>
                       <layer-control layerid="OpenLayers_Layer_Vector_132" visible="true" name="layerF"/>
                       <group-control name="A sub group of layers">
@@ -345,12 +342,36 @@ class WorldMapXBlock(XBlock):
                           <layer id="OpenLayers_Layer_WMS_272">
                              <param name="EastAsiaTribes" value="572"/>
                           </layer>
+
+                          <layer id="OpenLayers_Layer_WMS_248">
+                             <param name="YellowRiver" min="-602" max="11"/>
+                          </layer>
+                          <layer id="OpenLayers_Layer_WMS_246">
+                             <param name="YellowRiver" min="12" max="1048"/>
+                          </layer>
+                          <layer id="OpenLayers_Layer_WMS_244">
+                             <param name="YellowRiver" min="1049" max="1128"/>
+                          </layer>
+                          <layer id="OpenLayers_Layer_WMS_242">
+                             <param name="YellowRiver" min="1129" max="1368"/>
+                          </layer>
+                          <layer id="OpenLayers_Layer_WMS_240">
+                             <param name="YellowRiver" min="1369" max="1855"/>
+                          </layer>
                        </layers>
                        <sliders>
-                          <slider id="EastAsiaTribes" title="East Asia Tribes" param="EastAsiaTribes" min="-82" max="572" incr="1" position="bottom">
+                       """+
+                          #<slider id="EastAsiaTribes" title="East Asia Tribes" param="EastAsiaTribes" min="-82" max="572" incr="1" position="bottom">
+                          #   <help>
+                          #      <b>East Asia Tribes migration patterns</b><br/>
+                          #      From 82BCE through 572CE
+                          #   </help>
+                          #</slider>
+                        """
+                          <slider id="YellowRiver" title="Yellow River" param="YellowRiver" min="-602" max="1855" incr="10" position="bottom">
                              <help>
-                                <b>East Asia Tribes migration patterns</b>
-                                From 82BCE through 572CE
+                                <b>Yellow River diversions</b><br/>
+                                From 602BCE through 1855CE
                              </help>
                           </slider>
                        </sliders>
@@ -359,6 +380,8 @@ class WorldMapXBlock(XBlock):
                             <layer-control layerid="OpenLayers_Layer_WMS_332" name="Coastline1"/>
                             <layer-control layerid="OpenLayers_Layer_WMS_330" name="Yellow River"/>
                             <layer-control layerid="OpenLayers_Layer_WMS_232" name="Major Rivers"/>
+                            <layer-control layerid="OpenLayers_Layer_WMS_246" name="Yellow River 1048CE-1128CE"/>
+                            <layer-control layerid="OpenLayers_Layer_WMS_114" name="Expedition Route"/>
                           </group-control>
                        </group-control>
                     </worldmap>

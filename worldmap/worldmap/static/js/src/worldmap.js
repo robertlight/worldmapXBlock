@@ -114,16 +114,20 @@ function WorldMapXBlock(runtime, element) {
                             var layerSpecs = window.worldmapLayerSpecs[getUniqueId()];
                             for (var i=0; i<layerSpecs.length; i++) {
                                 for( var j=0; j<layerSpecs[i].params.length; j++) {
-                                    if( sliderSpec.param == layerSpecs[i].params[j].name ) {
-                                        var paramValue = layerSpecs[i].params[j].value;
-                                        var nFrac = 0;
-                                        if( paramValue != null ) {
-                                            var loc = paramValue.indexOf(".");
-                                            if( loc != -1 ) nFrac = paramValue.length - loc - 1;
+                                    if( layerSpecs[i].params[j].name == null ) {
+                                        console.log("ERROR:  unnamed param in layer specification");
+                                    } else {
+                                        if( sliderSpec.param == layerSpecs[i].params[j].name ) {
+                                            var paramValue = layerSpecs[i].params[j].value;
+                                            var nFrac = 0;
+                                            if( paramValue != null ) {
+                                                var loc = paramValue.indexOf(".");
+                                                if( loc != -1 ) nFrac = paramValue.length - loc - 1;
+                                            }
+                                            var visible =  (paramValue != null && paramValue == Math.floor(ui.value * Math.pow(10,nFrac))/Math.pow(10,nFrac))
+                                                || (ui.value >= layerSpecs[i].params[j].min && ui.value <= layerSpecs[i].params[j].max);
+                                            selectLayer(visible, layerSpecs[i].id);
                                         }
-                                        var visible =  (paramValue != null && paramValue == Math.floor(ui.value * Math.pow(10,nFrac))/Math.pow(10,nFrac))
-                                            || (ui.value >= layerSpecs[i].params[j].min && ui.value <= layerSpecs[i].params[j].max);
-                                        selectLayer(visible, layerSpecs[i].id);
                                     }
                                 }
                             }
