@@ -29,6 +29,8 @@ setup(
             'worldmap = worldmap:WorldMapXBlock',
             'layer-control = worldmap:LayerControlBlock',
             'group-control = worldmap:GroupControlBlock',
+            'worldmap-quiz = worldmap:WorldmapQuizBlock',
+            'explanation   = worldmap:HelpBlock',
             #TODO:  what is this for?  It doesn't seem to matter if things are defined here..
         ]
     },

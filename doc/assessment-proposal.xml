@@ -5,9 +5,15 @@
    whether or not that input is correct or not.
 -->
 
-<assessment padding="10">
+<worldmap-quiz padding="10">
     <worldmap .... />
+    <explanation>
+        <!-- overall explanation of what the constitutes a proper answer - optional -->
+    </explanation>
     <answer id="uniqId1" color="#FF0000" type="point|polygon|polyline|directed-polyline" >
+        <explanation>
+            <!-- html to display to explain this part of the proper answer -->
+        </explanation>
         <constraints>
             <matches percentOfGrade="25" percentAnswerInsidePaddedGeometry="100" percentGeometryInsidePaddedAnswer="100">
                 <geometry>
@@ -67,7 +73,7 @@
     <explanation>
         <!-- html to display to explain the proper answer -->
     </explanation>
-</assessment>
+</worldmap-quiz>
 
 <!--
    percentAnswerInsidePaddedGeometry is the amount of the answer geometry which must be inside the padded target geometry

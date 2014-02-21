@@ -44,6 +44,7 @@ class WorldMapXBlock(XBlock):
 
     has_children = True
 
+
     #@classmethod
     #def parse_xml(cls, node, runtime, keys, id_generator):
     #    """
@@ -93,6 +94,14 @@ class WorldMapXBlock(XBlock):
         The primary view of the WorldMapXBlock, shown to students
         when viewing courses.
         """
+        self.runtime.publish(self,
+            {
+                'event_type': 'grade',
+                'value': 5,
+                'max_value': 10
+            }
+        )
+
         html = self.resource_string("static/html/worldmap.html")
 
         frag = Fragment(html.format(self=self))
@@ -236,7 +245,7 @@ class WorldMapXBlock(XBlock):
         return [
             ("WorldMapXBlock",
              """
-                <vertical_demo>
+             <vertical_demo>
                 <worldmap href='http://23.21.172.243/maps/bostoncensus/embed?' debug='true' width='600' height='400' opacityControls='false' baseLayer='OpenLayers_Layer_Google_116'>
                    <layers>
                       <layer id="geonode:qing_charity_v1_mzg"/>
@@ -311,11 +320,7 @@ class WorldMapXBlock(XBlock):
                     </sliders>
                 </worldmap>
 
-                <problem_demo>
-                    <html_demo>
-                        <p>Please click on the location of <i>Timbuktu</i></p>
-                    </html_demo>
-
+                <worldmap-quiz padding='10'>
                     <worldmap name='worldmap' href='http://worldmap.harvard.edu/maps/chinaX/embed?' width='800' height='600' opacityControls='true' testLatitude='16.775800549402906' testLongitude='-3.0166396836062104' testRadius='10000' debug="true">
                        <layers>
                           <layer id="OpenLayers_Layer_WMS_276">
@@ -385,12 +390,156 @@ class WorldMapXBlock(XBlock):
                           </group-control>
                        </group-control>
                     </worldmap>
-                </problem_demo>
-                </vertical_demo>
+                    <explanation>
+                         <B>Overall explanation of what would be considered a correct answer - optional</B>
+                    </explanation>
+                    <answer id='foobar' color='#00FF00' type='point'>
+                       <explanation>
+                          <B>Explanation for this part of the answer - optional</B>
+                       </explanation>
+                       <constraints>
+                          <matches percentOfGrade="25" percentAnswerInsidePaddedGeometry="100" percentGeometryInsidePaddedAnswer="100">
+                          </matches>
+                       </constraints>
+                    </answer>
+                </worldmap-quiz>
+             </vertical_demo>
              """
             ),
         ]
 
+
+#******************************************************************************************************
+# ASSESSMENT CLASSES
+#******************************************************************************************************
+class WorldmapQuizBlock(XBlock):
+
+    padding = Integer(help="default padding distance (meters)", default=1, scope=Scope.content)
+
+    has_score = True
+
+    has_children = True
+
+    def student_view(self, context=None):
+        """Provide default student view."""
+        result = Fragment()
+        child_frags = self.runtime.render_children(self, context=context)
+        result.add_frags_resources(child_frags)
+
+        # for now, we'll render this just as a vertical layout....
+        result.add_css("""
+            .vertical {
+                border: solid 1px #888; padding: 3px;
+            }
+            """)
+        result.add_content(self.runtime.render_template("vertical.html", children=child_frags))
+        return result
+
+    @property
+    def worldmap(self):
+        for child_id in self.children:  # pylint: disable=E1101
+            child = self.runtime.get_block(child_id)
+            if isinstance(child, WorldMapXBlock):
+                return child
+        return None
+
+    @property
+    def answers(self):
+        answers = []
+        for child_id in self.children:  # pylint: disable=E1101
+            child = self.runtime.get_block(child_id)
+            if isinstance(child, AnswerBlock):
+                answers.append(child)
+        return answers
+
+    @property
+    def explanation(self):
+        for child_id in self.children:  # pylint: disable=E1101
+            child = self.runtime.get_block(child_id)
+            if isinstance(child, HelpBlock):
+                return child
+        return None
+
+    problem_view = student_view
+
+class ConstraintBlock(XBlock):
+
+    has_children = True
+    percentOfGrade = Float(help="how much of overall grade is dependent on this constraint being satisfied", default=100, scope=Scope.content)
+
+    def evaluate(self):
+        """Evaluates the constraint and returns True/False."""
+        raise NotImplementedError("Should not be calling base class method")
+
+class MatchesConstraintBlock(ConstraintBlock):
+
+    has_children = True
+    percentAnswerInsidePaddedGeometry= Float("percent of answer within the padded geometry of the constraint", default=100, scope=Scope.content)
+    percentGeometryInsidePaddedAnswer= Float("percent of constraint's geometry within the padded answer", default=100, scope=Scope.content)
+
+    def evaluate(self):
+        """Evaluates the constraint and returns True/False."""
+        return True  #STUB
+
+class AnswerBlock(XBlock):
+
+    has_children = True
+
+    id = String(help="unique id among multiple answer clauses", default=None, scope=Scope.content)
+    color = String(help="the color of the polyline,polygon or marker", default="#FF0000", scope=Scope.content)
+    type  = String(help="the type of the answer point|polygon|polyline|directed-polyline", default=None, scope=Scope.content)
+
+    def student_view(self, context=None):
+        """no view"""
+        pass
+
+    @property
+    def explanation(self):
+        for child_id in self.children:  # pylint: disable=E1101
+            child = self.runtime.get_block(child_id)
+            if isinstance(child, HelpBlock):
+                return child
+        return None
+
+    @property
+    def constraints(self):
+        for child_id in self.children:  # pylint: disable=E1101
+            child = self.runtime.get_block(child_id)
+            if isinstance(child, ConstraintsBlock):
+                return child.constraints
+        return None
+
+    problem_view = student_view
+
+
+class ConstraintsBlock(XBlock):
+    """An XBlock that records the constraint definitions."""
+
+    has_children = True
+
+    @property
+    def constraints(self):
+        constraints = []
+        for child_id in self.children:  # pylint: disable=E1101
+            child = self.runtime.get_block(child_id)
+#            if isinstance(child, ConstraintBlock):
+#                constraints.append(child)
+        return constraints
+
+
+    def problem_view(self, context=None):
+        """
+        has no visible rendering
+        """
+        pass
+
+    student_view = problem_view
+
+
+
+#***********************************************************************************************************
+#  Worldmap layout items
+#***********************************************************************************************************
 class SlidersBlock(XBlock):
     """An XBlock that records the slider definitions."""
 
@@ -427,25 +576,6 @@ class SliderBlock(XBlock):
     position=String(help="position of slider.  Values: top,bottom,left,right", default="bottom", scope=Scope.content)
     title=String(help="title/label for slider",default=None, scope=Scope.content)
 
-    #@classmethod
-    #def parse_xml(cls, node, runtime, keys, id_generator):
-    #    block = runtime.construct_xblock_from_class(cls, keys)
-    #
-    #    # Attributes become fields.
-    #    for name, value in node.items():
-    #        if name in block.fields:
-    #            setattr(block, name, value)
-    #
-    #    # Find <help> children, turn them into help-text content.
-    #    for child in node:
-    #        if child.tag == "help":
-    #            block.help += child.text
-    #        else:
-    #            block.runtime.add_node_as_child(block, child, id_generator)
-    #
-    #    return block
-
-
     @property
     def params(self):
         params = []
@@ -472,6 +602,7 @@ class SliderBlock(XBlock):
     student_view = problem_view
 
 
+#**** HelpBlock is also used for "explanation" tags
 class HelpBlock(XBlock):
     """An XBlock that contains help-text for a slider."""
 

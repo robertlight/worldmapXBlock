@@ -7,3 +7,7 @@ from .worldmap import LayerControlBlock
 from .worldmap import SlidersBlock
 from .worldmap import SliderBlock
 from .worldmap import HelpBlock
+from .worldmap import WorldmapQuizBlock
+from .worldmap import AnswerBlock
+from .worldmap import ConstraintsBlock
+from .worldmap import MatchesConstraintBlock
