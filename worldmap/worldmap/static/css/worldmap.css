@@ -98,3 +98,11 @@
 .horizontal-label {
     float:left;
 }
+
+.point-tool {
+    display:inline-block;
+    background: no-repeat scroll 0 0 transparent;
+    height:48px;
+    width:48px;
+    background-image: url('http://robertlight.com/tmp/markerIcon.png');
+}

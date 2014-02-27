@@ -11,7 +11,7 @@ function WorldMapXBlock(runtime, element) {
     MESSAGING.getInstance().addHandler(getUniqueId(),"zoomend", function(m) { on_setZoomLevel(element, m.getMessage()); });
     MESSAGING.getInstance().addHandler(getUniqueId(),"moveend", function(m) { on_setCenter(element, m.getMessage()); });
     MESSAGING.getInstance().addHandler(getUniqueId(),"changelayer", function(m) { on_changeLayer(element, m.getMessage()); });
-    MESSAGING.getInstance().addHandler(getUniqueId(),"click", function(m) { on_click(element, m.getMessage()); });
+    MESSAGING.getInstance().addHandler(getUniqueId(),"answer-tool-done", function(m) { on_answer_tool_done(element, m.getMessage()); });
 
     MESSAGING.getInstance().addHandler(getUniqueId(),"portalReady", function(m) {
         if( $('.frame', element).attr('centerLat') != 'None' ) {
@@ -167,6 +167,35 @@ function WorldMapXBlock(runtime, element) {
              }
         });
 
+        $.ajax({
+             type: "POST",
+             url: runtime.handlerUrl(element, 'getAnswers'),
+             data: "null",
+             success: function(result) {
+                //window.alert(JSON.stringify(result));
+                if( result != null ) {
+                    var html = "<ol>"+result.explanation;
+                    for(var i in result.answers) {
+                        result.answers[i].padding = result.padding;
+                        html += "<li><span id='answer-"+result.answers[i].id+"'><span>"+result.answers[i].explanation+"</span><br/><span class='"+result.answers[i].type+"-tool'/><span id='score-"+result.answers[i].id+"'/></span></li>";
+                    }
+                    html += "</ol>";
+                    $('.answerControls',element).html(html);
+                    for(var i in result.answers) {
+                        var tool = $('.answerControls',element).find('#answer-'+result.answers[i].id).find('.'+result.answers[i].type+'-tool');
+                        tool.css('background-color',result.answers[i].color);
+                        tool.click( result.answers[i], function(e) {
+                            MESSAGING.getInstance().sendAll( new Message("reset-answer-tool",null));
+                            MESSAGING.getInstance().send(
+                                getUniqueId(),
+                                new Message("set-answer-tool", e.data)
+                            );
+                        });
+                    }
+                }
+             }
+        });
+
         $('.layerControls',element).dynatree({
             title: "LayerControls",
 //            minExpandLevel: 1, // 1=rootnote not collapsible
@@ -206,6 +235,21 @@ function WorldMapXBlock(runtime, element) {
 //        tree.visit(function(node){
 //             node.expand(false);
 //        });
+
+        MESSAGING.getInstance().addHandler(getUniqueId(),"point-response", function(m) {
+            var data = JSON.parse(JSON.parse(m.message));
+            $.ajax({
+                type: "POST",
+                url: runtime.handlerUrl(element, 'point_response'),
+                data: JSON.stringify(data),
+                success: function(result) {
+                    window.alert("response: "+JSON.stringify(result));
+                    if( !result ) {
+                        console.log("Failed to test point-response for map: "+$('.frame', el).attr('id'));
+                    }
+                }
+            });
+        })
     });
 
     var layerVisibilityCache = [];
@@ -227,18 +271,18 @@ function WorldMapXBlock(runtime, element) {
         return $('.frame', element).attr('id');
     }
 
-    function on_click(el, location) {
-        $.ajax({
-            type: "POST",
-            url: runtime.handlerUrl(el, 'test_click'),
-            data: location,
-            success: function(result) {
-                if( result.hit ) {
-                    alert("Congratulations - you found it");
-                }
-            }
-        });
-    }
+//    function on_click(el, location) {
+//        $.ajax({
+//            type: "POST",
+//            url: runtime.handlerUrl(el, 'test_click'),
+//            data: location,
+//            success: function(result) {
+//                if( result.hit ) {
+//                    alert("Congratulations - you found it");
+//                }
+//            }
+//        });
+//    }
     function on_setZoomLevel(el, level) {
         $.ajax({
             type: "POST",

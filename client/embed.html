@@ -3,6 +3,7 @@
 {% block title %} {% trans "Map Viewer" %} - {{ block.super }} {% endblock %}
 
 {% block head %}
+   <link rel="stylesheet" type="text/css" href="http://dev.sencha.com/deploy/ext-3.4.0/examples/shared/examples.css" />
 {% include "geonode/ext_header.html" %}
 {% include "geonode/app_header.html" %}
 {% include "geonode/geo_header.html" %}
@@ -16,9 +17,11 @@
 <script type="text/javascript">
     google.load("earth", "1");
 </script>
+<script src="http://dev.sencha.com/deploy/ext-3.4.0/examples/shared/examples.js"></script>
 
 <script type="text/javascript">
 var app;
+var currentAnswer = null;  //what we're currently searching for with the currently selected tool
 
             OpenLayers.Control.Click = OpenLayers.Class(OpenLayers.Control, {
                 defaultHandlerOptions: {
@@ -49,7 +52,12 @@ var app;
                     var Geographic  = new OpenLayers.Projection("EPSG:4326"); 
                     var Mercator = new OpenLayers.Projection("EPSG:900913");
                     var point = new OpenLayers.Geometry.Point(lonlat.lon, lonlat.lat).transform(Mercator, Geographic);
-                    MESSAGING.getInstance().send(new Message("click",point));
+                    MESSAGING.getInstance().send(
+                            new Message("point-response",
+                                    {
+                                        point: {lat:point.x, lon:point.y},
+                                        answer: currentAnswer
+                                    }));
                 }
 	    });
 
@@ -60,7 +68,7 @@ function getLayerLegendInfo( layers, layer ) {
              return {
                         styles: layers[i].styles,
                         name:   layers[i].name,
-                        url:    layers[i].url,
+                        url:    layers[i].url
                     }
          }
       }
@@ -159,10 +167,25 @@ Ext.onReady(function() {
 
         var click = new OpenLayers.Control.Click();
         app.mapPanel.map.addControl(click);
-        click.activate();
+
+        MESSAGING.getInstance().registerHandler("reset-answer-tool", function(m) {
+           click.deactivate();
+           currentAnswer = null;
+        });
+
+        MESSAGING.getInstance().registerHandler("set-answer-tool", function(e) {
+            var message = JSON.parse(e.message);
+            if( message.type == 'point' ) {
+               Ext.example.msg("Info","Click the map at the location requested");
+               currentAnswer = message;
+               click.activate();
+            }
+        });
+
 
         MESSAGING.getInstance().send(new Message("portalReady", {}));
     });
+
 
 {% endautoescape %}
 });

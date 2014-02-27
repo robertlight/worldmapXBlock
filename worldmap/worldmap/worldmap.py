@@ -10,6 +10,8 @@ from xblock.core import XBlock
 from xblock.fields import Scope, Integer, Any, String, Float, Dict, Boolean,List
 from xblock.fragment import Fragment
 from lxml import etree
+from shapely.geometry import Point
+
 
 log = logging.getLogger(__name__)
 
@@ -104,6 +106,8 @@ class WorldMapXBlock(XBlock):
 
         html = self.resource_string("static/html/worldmap.html")
 
+        url = self.runtime.local_resource_url(self,"static/images/markerIcon.png")
+
         frag = Fragment(html.format(self=self))
         frag.add_css(self.resource_string("static/css/worldmap.css"))
         frag.add_css_url("http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css")
@@ -168,8 +172,8 @@ class WorldMapXBlock(XBlock):
             else:
                latitude = float(data.get('y'))
                longitude= float(data.get('x'))
-               dLatitude= latitude - self.testLatitude
-               dLongitude=longitude - self.testLongitude
+               #dLatitude= latitude - self.testLatitude
+               #dLongitude=longitude - self.testLongitude
                sinHalfDeltaLon = math.sin(math.pi * (self.testLongitude-longitude)/360)
                sinHalfDeltaLat = math.sin(math.pi * (self.testLatitude-latitude)/360)
                a = sinHalfDeltaLat * sinHalfDeltaLat + sinHalfDeltaLon*sinHalfDeltaLon * math.cos(math.pi*latitude/180)*math.cos(math.pi*self.testLatitude/180)
@@ -177,6 +181,33 @@ class WorldMapXBlock(XBlock):
 
         return {'hit': isHit}
 
+    @XBlock.json_handler
+    def point_response(self, data, suffix=''):
+        padding = data['answer']['padding']
+        correctPoint = data['answer']['constraints'][0]['geometry']
+        userAnswer = data['point']
+        latitude = userAnswer['lat']
+        longitude= userAnswer['lon']
+        #dLatitude= latitude - correctPoint['lat']
+        #dLongitude=longitude - correctPoint['lon']
+        sinHalfDeltaLon = math.sin(math.pi * (correctPoint['lon']-longitude)/360)
+        sinHalfDeltaLat = math.sin(math.pi * (correctPoint['lat']-latitude)/360)
+        a = sinHalfDeltaLat * sinHalfDeltaLat + sinHalfDeltaLon*sinHalfDeltaLon * math.cos(math.pi*latitude/180)*math.cos(math.pi*correctPoint['lat']/180)
+        isHit = 2*self.SPHERICAL_DEFAULT_RADIUS*math.atan2(math.sqrt(a), math.sqrt(1-a)) < padding
+        return {'isHit': isHit}
+
+    @XBlock.json_handler
+    def getAnswers(self, data, suffix=''):
+        if isinstance(self.get_parent(), WorldmapQuizBlock):
+            arr = []
+            for answer in self.get_parent().answers:
+                arr.append( answer.data )
+            return {
+                'answers': arr,
+                'padding': self.get_parent().padding,
+                'explanation': self.get_parent().explanation.content
+            }
+        return None
 
     @XBlock.json_handler
     def layerTree(self, data, suffix=''):
@@ -246,6 +277,37 @@ class WorldMapXBlock(XBlock):
             ("WorldMapXBlock",
              """
              <vertical_demo>
+               <worldmap-quiz padding='1000'>
+                    <explanation>
+                         <B>A quiz about the Boston area</B>
+                    </explanation>
+                    <answer id='foobar' color='00FF00' type='point'>
+                       <explanation>
+                          Where is the biggest island in Boston harbor?
+                       </explanation>
+                       <constraints>
+                          <matches percentOfGrade="25" percentAnswerInsidePaddedGeometry="100" percentGeometryInsidePaddedAnswer="100">
+                              <point lat="-70.9657058456866" lon="42.32011232390349"/>
+                              <explanation>
+                                 <B> Look at boston harbor - pick the biggest island </B>
+                              </explanation>
+                          </matches>
+                       </constraints>
+                    </answer>
+                    <answer id='baz' color='0000FF' type='point'>
+                       <explanation>
+                          Where is the land bridge that formed Nahant bay?
+                       </explanation>
+                       <constraints>
+                          <matches percentOfGrade="25" percentAnswerInsidePaddedGeometry="100" percentGeometryInsidePaddedAnswer="100">
+                              <point lat="-70.93824002537393" lon="42.445896458204764"/>
+                              <explanation>
+                                 <B> Look for Nahant Bay on the map</B>
+                              </explanation>
+                          </matches>
+                       </constraints>
+                    </answer>
+
                 <worldmap href='http://23.21.172.243/maps/bostoncensus/embed?' debug='true' width='600' height='400' opacityControls='false' baseLayer='OpenLayers_Layer_Google_116'>
                    <layers>
                       <layer id="geonode:qing_charity_v1_mzg"/>
@@ -319,92 +381,103 @@ class WorldMapXBlock(XBlock):
                       </slider>
                     </sliders>
                 </worldmap>
-
-                <worldmap-quiz padding='10'>
-                    <worldmap name='worldmap' href='http://worldmap.harvard.edu/maps/chinaX/embed?' width='800' height='600' opacityControls='true' testLatitude='16.775800549402906' testLongitude='-3.0166396836062104' testRadius='10000' debug="true">
-                       <layers>
-                          <layer id="OpenLayers_Layer_WMS_276">
-                             <param name="EastAsiaTribes" min="449" max="545"/>
-                          </layer>
-                          <layer id="OpenLayers_Layer_WMS_274">
-                             <param name="EastAsiaTribes" min="546" max="571"/>
-                          </layer>
-                          <layer id="OpenLayers_Layer_WMS_320">
-                             <param name="EastAsiaTribes" min="73" max="261"/>
-                          </layer>
-                          <layer id="OpenLayers_Layer_WMS_324">
-                             <param name="EastAsiaTribes" min="-82" max="72"/>
-                          </layer>
-                          <layer id="OpenLayers_Layer_WMS_294">
-                             <param name="EastAsiaTribes" min="262" max="280"/>
-                          </layer>
-                          <layer id="OpenLayers_Layer_WMS_292">
-                             <param name="EastAsiaTribes" min="281" max="326"/>
-                          </layer>
-                          <layer id="OpenLayers_Layer_WMS_288">
-                             <param name="EastAsiaTribes" min="327" max="448"/>
-                          </layer>
-                          <layer id="OpenLayers_Layer_WMS_272">
-                             <param name="EastAsiaTribes" value="572"/>
-                          </layer>
-
-                          <layer id="OpenLayers_Layer_WMS_248">
-                             <param name="YellowRiver" min="-602" max="11"/>
-                          </layer>
-                          <layer id="OpenLayers_Layer_WMS_246">
-                             <param name="YellowRiver" min="12" max="1048"/>
-                          </layer>
-                          <layer id="OpenLayers_Layer_WMS_244">
-                             <param name="YellowRiver" min="1049" max="1128"/>
-                          </layer>
-                          <layer id="OpenLayers_Layer_WMS_242">
-                             <param name="YellowRiver" min="1129" max="1368"/>
-                          </layer>
-                          <layer id="OpenLayers_Layer_WMS_240">
-                             <param name="YellowRiver" min="1369" max="1855"/>
-                          </layer>
-                       </layers>
-                       <sliders>
-                       """+
-                          #<slider id="EastAsiaTribes" title="East Asia Tribes" param="EastAsiaTribes" min="-82" max="572" incr="1" position="bottom">
-                          #   <help>
-                          #      <b>East Asia Tribes migration patterns</b><br/>
-                          #      From 82BCE through 572CE
-                          #   </help>
-                          #</slider>
-                        """
-                          <slider id="YellowRiver" title="Yellow River" param="YellowRiver" min="-602" max="1855" incr="10" position="bottom">
-                             <help>
-                                <b>Yellow River diversions</b><br/>
-                                From 602BCE through 1855CE
-                             </help>
-                          </slider>
-                       </sliders>
-                       <group-control name="ChinaX layers">
-                          <group-control name="geography">
-                            <layer-control layerid="OpenLayers_Layer_WMS_332" name="Coastline1"/>
-                            <layer-control layerid="OpenLayers_Layer_WMS_330" name="Yellow River"/>
-                            <layer-control layerid="OpenLayers_Layer_WMS_232" name="Major Rivers"/>
-                            <layer-control layerid="OpenLayers_Layer_WMS_246" name="Yellow River 1048CE-1128CE"/>
-                            <layer-control layerid="OpenLayers_Layer_WMS_114" name="Expedition Route"/>
-                          </group-control>
-                       </group-control>
-                    </worldmap>
-                    <explanation>
-                         <B>Overall explanation of what would be considered a correct answer - optional</B>
-                    </explanation>
-                    <answer id='foobar' color='#00FF00' type='point'>
-                       <explanation>
-                          <B>Explanation for this part of the answer - optional</B>
-                       </explanation>
-                       <constraints>
-                          <matches percentOfGrade="25" percentAnswerInsidePaddedGeometry="100" percentGeometryInsidePaddedAnswer="100">
-                          </matches>
-                       </constraints>
-                    </answer>
-                </worldmap-quiz>
-             </vertical_demo>
-             """
+              </worldmap-quiz>
+            </vertical_demo>
+              """
+             #   <worldmap-quiz padding='10'>
+             #       <worldmap name='worldmap' href='http://worldmap.harvard.edu/maps/chinaX/embed?' width='800' height='600' opacityControls='true' testLatitude='16.775800549402906' testLongitude='-3.0166396836062104' testRadius='10000' debug="true">
+             #          <layers>
+             #             <layer id="OpenLayers_Layer_WMS_276">
+             #                <param name="EastAsiaTribes" min="449" max="545"/>
+             #             </layer>
+             #             <layer id="OpenLayers_Layer_WMS_274">
+             #                <param name="EastAsiaTribes" min="546" max="571"/>
+             #             </layer>
+             #             <layer id="OpenLayers_Layer_WMS_320">
+             #                <param name="EastAsiaTribes" min="73" max="261"/>
+             #             </layer>
+             #             <layer id="OpenLayers_Layer_WMS_324">
+             #                <param name="EastAsiaTribes" min="-82" max="72"/>
+             #             </layer>
+             #             <layer id="OpenLayers_Layer_WMS_294">
+             #                <param name="EastAsiaTribes" min="262" max="280"/>
+             #             </layer>
+             #             <layer id="OpenLayers_Layer_WMS_292">
+             #                <param name="EastAsiaTribes" min="281" max="326"/>
+             #             </layer>
+             #             <layer id="OpenLayers_Layer_WMS_288">
+             #                <param name="EastAsiaTribes" min="327" max="448"/>
+             #             </layer>
+             #             <layer id="OpenLayers_Layer_WMS_272">
+             #                <param name="EastAsiaTribes" value="572"/>
+             #             </layer>
+             #
+             #             <layer id="OpenLayers_Layer_WMS_248">
+             #                <param name="YellowRiver" min="-602" max="11"/>
+             #             </layer>
+             #             <layer id="OpenLayers_Layer_WMS_246">
+             #                <param name="YellowRiver" min="12" max="1048"/>
+             #             </layer>
+             #             <layer id="OpenLayers_Layer_WMS_244">
+             #                <param name="YellowRiver" min="1049" max="1128"/>
+             #             </layer>
+             #             <layer id="OpenLayers_Layer_WMS_242">
+             #                <param name="YellowRiver" min="1129" max="1368"/>
+             #             </layer>
+             #             <layer id="OpenLayers_Layer_WMS_240">
+             #                <param name="YellowRiver" min="1369" max="1855"/>
+             #             </layer>
+             #          </layers>
+             #          <sliders>
+             #             <slider id="YellowRiver" title="Yellow River" param="YellowRiver" min="-602" max="1855" incr="10" position="bottom">
+             #                <help>
+             #                   <b>Yellow River diversions</b><br/>
+             #                   From 602BCE through 1855CE
+             #                </help>
+             #             </slider>
+             #          </sliders>
+             #          <group-control name="ChinaX layers">
+             #             <group-control name="geography">
+             #               <layer-control layerid="OpenLayers_Layer_WMS_332" name="Coastline1"/>
+             #               <layer-control layerid="OpenLayers_Layer_WMS_330" name="Yellow River"/>
+             #               <layer-control layerid="OpenLayers_Layer_WMS_232" name="Major Rivers"/>
+             #               <layer-control layerid="OpenLayers_Layer_WMS_246" name="Yellow River 1048CE-1128CE"/>
+             #               <layer-control layerid="OpenLayers_Layer_WMS_114" name="Expedition Route"/>
+             #             </group-control>
+             #          </group-control>
+             #       </worldmap>
+             #       <explanation>
+             #            <B>How well do you know the history of the Yellow River?</B>
+             #       </explanation>
+             #       <answer id='foobar' color='00FF00' type='point'>
+             #          <explanation>
+             #             Use the tool button below and show where the diversion point for the alteration in the Yellow River circa 1855
+             #          </explanation>
+             #          <constraints>
+             #             <matches percentOfGrade="25" percentAnswerInsidePaddedGeometry="100" percentGeometryInsidePaddedAnswer="100">
+             #                 <point lat="113.523" lon="34.97248"/>
+             #                 <explanation>
+             #                    <B> The diversion point was just northwest of Zhengzhou </B>
+             #                 </explanation>
+             #             </matches>
+             #          </constraints>
+             #       </answer>
+             #       <answer id='baz' color='0000FF' type='point'>
+             #          <explanation>
+             #             Where is Hong Kong?
+             #          </explanation>
+             #          <constraints>
+             #             <matches percentOfGrade="25" percentAnswerInsidePaddedGeometry="100" percentGeometryInsidePaddedAnswer="100">
+             #                 <point lat="114.21516592567018" lon="22.346155606846434"/>
+             #                 <explanation>
+             #                    <B> Hong Kong is on the coast north east of Macau </B>
+             #                 </explanation>
+             #             </matches>
+             #          </constraints>
+             #       </answer>
+             #   </worldmap-quiz>
+             #</vertical_demo>
+             #"""
             ),
         ]
 
@@ -467,6 +540,28 @@ class ConstraintBlock(XBlock):
     has_children = True
     percentOfGrade = Float(help="how much of overall grade is dependent on this constraint being satisfied", default=100, scope=Scope.content)
 
+    @property
+    def data(self):
+        return {
+            'explanation':self.explanation.content,
+            'geometry':self.geometry.data
+        }
+    @property
+    def explanation(self):
+        for child_id in self.children:  # pylint: disable=E1101
+            child = self.runtime.get_block(child_id)
+            if isinstance(child, HelpBlock):
+                return child
+        return None
+
+    @property
+    def geometry(self):
+        for child_id in self.children:  # pylint: disable=E1101
+            child = self.runtime.get_block(child_id)
+            if isinstance(child, GeometryBlock):
+                return child
+        raise RuntimeError("no geometry found")
+
     def evaluate(self):
         """Evaluates the constraint and returns True/False."""
         raise NotImplementedError("Should not be calling base class method")
@@ -477,9 +572,40 @@ class MatchesConstraintBlock(ConstraintBlock):
     percentAnswerInsidePaddedGeometry= Float("percent of answer within the padded geometry of the constraint", default=100, scope=Scope.content)
     percentGeometryInsidePaddedAnswer= Float("percent of constraint's geometry within the padded answer", default=100, scope=Scope.content)
 
+    @property
+    def data(self):
+        return {
+            'percentAnswerInsidePaddedGeometry':self.percentAnswerInsidePaddedGeometry,
+            'percentGeometryInsidePaddedAnswer':self.percentGeometryInsidePaddedAnswer,
+            'geometry':self.geometry.data
+        }
     def evaluate(self):
         """Evaluates the constraint and returns True/False."""
         return True  #STUB
+
+class GeometryBlock(XBlock):
+
+    has_children = True
+
+    def evaluate(self):
+        """Evaluates the constraint and returns True/False."""
+        raise NotImplementedError("Should not be calling base class method")
+
+class PointBlock(GeometryBlock):
+
+    lat = Float(help="latitude", default=None, scope=Scope.content)
+    lon = Float(help="longitude",default=None, scope=Scope.content)
+
+    @property
+    def data(self):
+        return {
+            'lat':self.lat,
+            'lon':self.lon
+        }
+
+    def evaluate(self):
+        """Evaluates the constraint and returns True/False."""
+        raise NotImplementedError("Should not be calling base class method")
 
 class AnswerBlock(XBlock):
 
@@ -489,10 +615,26 @@ class AnswerBlock(XBlock):
     color = String(help="the color of the polyline,polygon or marker", default="#FF0000", scope=Scope.content)
     type  = String(help="the type of the answer point|polygon|polyline|directed-polyline", default=None, scope=Scope.content)
 
+    # since we are currently only allowing a single answer, the percentOfGrade will be 100%
+    percentOfGrade = Float(help="how much of overall grade is dependent on this answer", default=100, scope=Scope.content)
+
     def student_view(self, context=None):
         """no view"""
         pass
 
+    @property
+    def data(self):
+        constraints = []
+        for constraint in self.constraints:
+            constraints.append(constraint.data)
+
+        return {
+            'id':self.id,
+            'color':self.color,
+            'type':self.type,
+            'explanation':self.explanation.content,
+            'constraints':constraints,
+        }
     @property
     def explanation(self):
         for child_id in self.children:  # pylint: disable=E1101
@@ -522,8 +664,8 @@ class ConstraintsBlock(XBlock):
         constraints = []
         for child_id in self.children:  # pylint: disable=E1101
             child = self.runtime.get_block(child_id)
-#            if isinstance(child, ConstraintBlock):
-#                constraints.append(child)
+            if isinstance(child, ConstraintBlock):
+                constraints.append(child)
         return constraints
 
 

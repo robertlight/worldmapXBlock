@@ -51,6 +51,16 @@ var MESSAGING = (function Messaging() { // declare 'Singleton' as the return val
               throw "SecurityException: unknown xblockId: "+id+"  can't send message type="+msg.getType()+"   message="+msg.getMessageStr();
            }
         },
+        sendAll: function(msg) {
+            for( var id in this.clientCredentials ) {
+                var creds = this.clientCredentials[id];
+                if( creds ) {
+                   creds.source.postMessage(JSON.stringify( {type: msg.getType(), message: msg.getMessageStr()}), creds.clientHost);
+                } else {
+                   throw "SecurityException: unknown xblockId: "+id+"  can't send message type="+msg.getType()+"   message="+msg.getMessageStr();
+                }
+            }
+        },
         getHost: function() {
            return this.host;
         }

@@ -6,3 +6,12 @@ Dynatree
 Touch Punch
     website:  http://touchpunch.furf.com/
     license:  MIT & GPLv2
+
+
+Icon licenses:
+images/mimetypes/nuvola-style
+license:   LGPL-v2.1    http://oss-watch.ac.uk/resources/lgpl
+source:  http://openiconlibrary.sourceforge.net/gallery2/?./Icons/mimetypes/nuvola-style/
+
+Shapely (python port of the Java/JTS GIS library)
+License:  creative commons license:    http://creativecommons.org/licenses/by/3.0/us/

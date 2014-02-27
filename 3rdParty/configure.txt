@@ -1,0 +1,6 @@
+Notes on configuring server elements
+
+1) install Shapely, a python GIS package based on Java JTS library
+   website:  http://toblerity.org/shapely
+
+   commandline:  $ pip install Shapely
