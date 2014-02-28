@@ -243,9 +243,14 @@ function WorldMapXBlock(runtime, element) {
                 url: runtime.handlerUrl(element, 'point_response'),
                 data: JSON.stringify(data),
                 success: function(result) {
-                    window.alert("response: "+JSON.stringify(result));
                     if( !result ) {
                         console.log("Failed to test point-response for map: "+$('.frame', el).attr('id'));
+                    } else {  //TODO: Fix url to point to local image
+                        $('#score-'+result.answer.id).html("<img src='/resource/equality_demo/public/images/"+(result.isHit?"correct":"incorrect")+"-icon.png'/>");
+                        if( result.isHit ) {
+                            MESSAGING.getInstance().sendAll( new Message("reset-answer-tool",null));
+                        }
+
                     }
                 }
             });

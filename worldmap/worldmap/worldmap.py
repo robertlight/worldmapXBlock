@@ -194,7 +194,10 @@ class WorldMapXBlock(XBlock):
         sinHalfDeltaLat = math.sin(math.pi * (correctPoint['lat']-latitude)/360)
         a = sinHalfDeltaLat * sinHalfDeltaLat + sinHalfDeltaLon*sinHalfDeltaLon * math.cos(math.pi*latitude/180)*math.cos(math.pi*correctPoint['lat']/180)
         isHit = 2*self.SPHERICAL_DEFAULT_RADIUS*math.atan2(math.sqrt(a), math.sqrt(1-a)) < padding
-        return {'isHit': isHit}
+        return {
+            'answer':data['answer'],
+            'isHit': isHit
+        }
 
     @XBlock.json_handler
     def getAnswers(self, data, suffix=''):
@@ -202,9 +205,16 @@ class WorldMapXBlock(XBlock):
             arr = []
             for answer in self.get_parent().answers:
                 arr.append( answer.data )
+
+            padding = 1
+            try:
+                padding = self.get_parent().padding
+            except ValueError:
+                print "Invalid value for attribute 'padding' on tag <worldmap-quiz>"
+
             return {
                 'answers': arr,
-                'padding': self.get_parent().padding,
+                'padding': padding,
                 'explanation': self.get_parent().explanation.content
             }
         return None
@@ -277,7 +287,7 @@ class WorldMapXBlock(XBlock):
             ("WorldMapXBlock",
              """
              <vertical_demo>
-               <worldmap-quiz padding='1000'>
+               <worldmap-quiz padding='500'>
                     <explanation>
                          <B>A quiz about the Boston area</B>
                     </explanation>

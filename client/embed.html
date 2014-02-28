@@ -21,6 +21,9 @@
 
 <script type="text/javascript">
 var app;
+var markerLayer;
+var markers = new Array();
+
 var currentAnswer = null;  //what we're currently searching for with the currently selected tool
 
             OpenLayers.Control.Click = OpenLayers.Class(OpenLayers.Control, {
@@ -52,12 +55,25 @@ var currentAnswer = null;  //what we're currently searching for with the current
                     var Geographic  = new OpenLayers.Projection("EPSG:4326"); 
                     var Mercator = new OpenLayers.Projection("EPSG:900913");
                     var point = new OpenLayers.Geometry.Point(lonlat.lon, lonlat.lat).transform(Mercator, Geographic);
+                    var size = new OpenLayers.Size(21,25);
+                    var offset = new OpenLayers.Pixel(-size.w/2, -size.h);
+                    var icon = new OpenLayers.Icon('http://www.openlayers.org/dev/img/marker.png',size,offset);
+                    icon.imageDiv.firstChild.setAttribute("style","background-color:"+currentAnswer.color);
+
+                    if( markers[currentAnswer.id] ) {
+                        markerLayer.removeMarker(markers[currentAnswer.id]);
+                    }
+                    markers[currentAnswer.id] = new OpenLayers.Marker(lonlat,icon);
+                    markerLayer.addMarker(markers[currentAnswer.id]);
+
                     MESSAGING.getInstance().send(
-                            new Message("point-response",
-                                    {
-                                        point: {lat:point.x, lon:point.y},
-                                        answer: currentAnswer
-                                    }));
+                        new Message("point-response",
+                            {
+                                point: {lat:point.x, lon:point.y},
+                                answer: currentAnswer
+                            }
+                        )
+                    );
                 }
 	    });
 
@@ -129,6 +145,11 @@ Ext.onReady(function() {
 //    setTimeout(function() {MESSAGING.getInstance().send(new Message("info","ad-hoc message from slave"));}, 1500);
 
     app.on("ready", function() {
+
+        markerLayer = new OpenLayers.Layer.Markers("worldmap-markers");
+
+        app.mapPanel.map.addLayer(markerLayer);
+
         app.mapPanel.map.events.register("moveend", app.mapPanel, function(){
             MESSAGING.getInstance().send(new Message("moveend",{center:app.mapPanel.map.getCenter(),zoomLevel:app.mapPanel.map.getZoom()}));
         });
