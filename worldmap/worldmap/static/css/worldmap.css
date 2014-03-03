@@ -106,3 +106,7 @@
     width:48px;
     background-image: url('http://robertlight.com/tmp/markerIcon.png');
 }
+
+.no-close .ui-dialog-titlebar-close {
+  display: none;
+}

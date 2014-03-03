@@ -291,9 +291,9 @@ class WorldMapXBlock(XBlock):
                     <explanation>
                          <B>A quiz about the Boston area</B>
                     </explanation>
-                    <answer id='foobar' color='00FF00' type='point'>
+                    <answer id='foobar' color='00FF00' type='point' hintAfterAttempt='3'>
                        <explanation>
-                          Where is the biggest island in Boston harbor?
+                          <B>Hint:</B> Where is the biggest island in Boston harbor?
                        </explanation>
                        <constraints>
                           <matches percentOfGrade="25" percentAnswerInsidePaddedGeometry="100" percentGeometryInsidePaddedAnswer="100">
@@ -312,7 +312,7 @@ class WorldMapXBlock(XBlock):
                           <matches percentOfGrade="25" percentAnswerInsidePaddedGeometry="100" percentGeometryInsidePaddedAnswer="100">
                               <point lat="-70.93824002537393" lon="42.445896458204764"/>
                               <explanation>
-                                 <B> Look for Nahant Bay on the map</B>
+                                 <B>Hint:</B> Look for Nahant Bay on the map
                               </explanation>
                           </matches>
                        </constraints>
@@ -624,6 +624,7 @@ class AnswerBlock(XBlock):
     id = String(help="unique id among multiple answer clauses", default=None, scope=Scope.content)
     color = String(help="the color of the polyline,polygon or marker", default="#FF0000", scope=Scope.content)
     type  = String(help="the type of the answer point|polygon|polyline|directed-polyline", default=None, scope=Scope.content)
+    hintAfterAttempt= Integer(help="display hint button after N failed attempts", default=None, scope=Scope.content)
 
     # since we are currently only allowing a single answer, the percentOfGrade will be 100%
     percentOfGrade = Float(help="how much of overall grade is dependent on this answer", default=100, scope=Scope.content)
@@ -644,6 +645,7 @@ class AnswerBlock(XBlock):
             'type':self.type,
             'explanation':self.explanation.content,
             'constraints':constraints,
+            'hintAfterAttempt': self.hintAfterAttempt
         }
     @property
     def explanation(self):

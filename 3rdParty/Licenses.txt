@@ -1,6 +1,14 @@
-JQuery
-JQuery-ui
-Dynatree
+
+From Ned Batchelder:
+MIT, BSD, MPL 2, and Apache 2.0 are definitely compatible
+GPLv2 and MPL 1.1 definitely are not compatible
+AGPL, GPLv3, and LGPL might be compatible -- depends on how they're used
+
+
+
+Dynatree   MIT
+JQuery    MIT
+JQuery-ui MIT
 
 
 Touch Punch
@@ -14,4 +22,7 @@ license:   LGPL-v2.1    http://oss-watch.ac.uk/resources/lgpl
 source:  http://openiconlibrary.sourceforge.net/gallery2/?./Icons/mimetypes/nuvola-style/
 
 Shapely (python port of the Java/JTS GIS library)
-License:  creative commons license:    http://creativecommons.org/licenses/by/3.0/us/
+License:  BSD, creative commons license:    http://creativecommons.org/licenses/by/3.0/us/
+
+
+jNotify - MIT License : http://www.opensource.org/licenses/mit-license.php

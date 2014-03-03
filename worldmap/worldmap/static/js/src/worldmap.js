@@ -177,7 +177,7 @@ function WorldMapXBlock(runtime, element) {
                     var html = "<ol>"+result.explanation;
                     for(var i in result.answers) {
                         result.answers[i].padding = result.padding;
-                        html += "<li><span id='answer-"+result.answers[i].id+"'><span>"+result.answers[i].explanation+"</span><br/><span class='"+result.answers[i].type+"-tool'/><span id='score-"+result.answers[i].id+"'/></span></li>";
+                        html += "<li><span id='answer-"+result.answers[i].id+"'><span>"+result.answers[i].explanation+"</span><br/><span class='"+result.answers[i].type+"-tool'/><span id='score-"+result.answers[i].id+"'/><div id='dialog-"+result.answers[i].id+"'/></span></li>";
                     }
                     html += "</ol>";
                     $('.answerControls',element).html(html);
@@ -246,9 +246,22 @@ function WorldMapXBlock(runtime, element) {
                     if( !result ) {
                         console.log("Failed to test point-response for map: "+$('.frame', el).attr('id'));
                     } else {  //TODO: Fix url to point to local image
-                        $('#score-'+result.answer.id).html("<img src='/resource/equality_demo/public/images/"+(result.isHit?"correct":"incorrect")+"-icon.png'/>");
+                        var div = $('#score-'+result.answer.id);
+                        div.html("<img src='/resource/equality_demo/public/images/"+(result.isHit?"correct":"incorrect")+"-icon.png'/>");
                         if( result.isHit ) {
                             MESSAGING.getInstance().sendAll( new Message("reset-answer-tool",null));
+                            info("Correct!", 1000);
+                        } else {
+                            var nAttempt = div.attr("nAttempts");
+                            if( nAttempt == undefined ) nAttempt = 0;
+                            nAttempt++;
+                            div.attr("nAttempts",nAttempt);
+                            var hintAfterAttempt = result.answer.hintAfterAttempt;
+                            if( hintAfterAttempt != null ) {
+                                if( nAttempt % hintAfterAttempt == 0) {
+                                    info(result.answer.explanation);
+                                }
+                            }
                         }
 
                     }
@@ -402,7 +415,34 @@ function WorldMapXBlock(runtime, element) {
   //      $(document).tooltip();
         /* Here's where you'd do things on page load. */
     });
+
+
+
 }
 
 
+function info(msgHtml, duration) {
+      if( duration == undefined ) duration = 2500;
+      jNotify(
+		msgHtml,
+		{
+		  autoHide : true, // added in v2.0
+		  clickOverlay : false, // added in v2.0
+		  MinWidth : 250,
+		  TimeShown : duration,
+		  ShowTimeEffect : 200,
+		  HideTimeEffect : 200,
+		  LongTrip :20,
+		  HorizontalPosition : 'center',
+		  VerticalPosition : 'top',
+		  ShowOverlay : true,
+   		  ColorOverlay : '#000',
+		  OpacityOverlay : 0.3,
+		  onClosed : function(){ // added in v2.0
 
+		  },
+		  onCompleted : function(){ // added in v2.0
+
+		  }
+		});
+}
