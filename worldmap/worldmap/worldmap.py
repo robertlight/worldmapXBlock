@@ -161,27 +161,6 @@ class WorldMapXBlock(XBlock):
         return result
 
     @XBlock.json_handler
-    def test_click(self, data, suffix=''):
-        """
-        Called when user clicks
-        """
-        isHit=False
-        if self.testLatitude != None:
-            if not data.get('y'):
-               log.warn('latitude not found')
-            else:
-               latitude = float(data.get('y'))
-               longitude= float(data.get('x'))
-               #dLatitude= latitude - self.testLatitude
-               #dLongitude=longitude - self.testLongitude
-               sinHalfDeltaLon = math.sin(math.pi * (self.testLongitude-longitude)/360)
-               sinHalfDeltaLat = math.sin(math.pi * (self.testLatitude-latitude)/360)
-               a = sinHalfDeltaLat * sinHalfDeltaLat + sinHalfDeltaLon*sinHalfDeltaLon * math.cos(math.pi*latitude/180)*math.cos(math.pi*self.testLatitude/180)
-               isHit = 2*self.SPHERICAL_DEFAULT_RADIUS*math.atan2(math.sqrt(a), math.sqrt(1-a)) < self.testRadius
-
-        return {'hit': isHit}
-
-    @XBlock.json_handler
     def point_response(self, data, suffix=''):
         padding = data['answer']['padding']
         correctPoint = data['answer']['constraints'][0]['geometry']
@@ -313,6 +292,36 @@ class WorldMapXBlock(XBlock):
                               <point lat="-70.93824002537393" lon="42.445896458204764"/>
                               <explanation>
                                  <B>Hint:</B> Look for Nahant Bay on the map
+                              </explanation>
+                          </matches>
+                       </constraints>
+                    </answer>
+                    <answer id='area' color='FF00FF' type='polygon'>
+                       <explanation>
+                          Draw a polygon around "back bay"?
+                       </explanation>
+                       <constraints>
+                          <matches percentOfGrade="25" percentAnswerInsidePaddedGeometry="100" percentGeometryInsidePaddedAnswer="80">
+                             <polygon>
+                                 <point lon="-71.09350774082822" lat="42.35148683512319"/>
+                                 <point lon="-71.09275672230382" lat="42.34706235935522"/>
+                                 <point lon="-71.08775708470029" lat="42.3471733715164"/>
+                                 <point lon="-71.08567569050435" lat="42.34328782922443"/>
+                                 <point lon="-71.08329388889936" lat="42.34140047917672"/>
+                                 <point lon="-71.07614848408352" lat="42.347379536438645"/>
+                                 <point lon="-71.07640597614892" lat="42.3480456031057"/>
+                                 <point lon="-71.0728225449051"  lat="42.34785529906382"/>
+                                 <point lon="-71.07200715336435" lat="42.34863237027516"/>
+                                 <point lon="-71.07228610310248" lat="42.34942529018035"/>
+                                 <point lon="-71.07011887821837" lat="42.35004376076278"/>
+                                 <point lon="-71.0708055237264"  lat="42.351835705270716"/>
+                                 <point lon="-71.07325169834775" lat="42.35616470553563"/>
+                                 <point lon="-71.07408854756031" lat="42.35600613935877"/>
+                                 <point lon="-71.07483956608469" lat="42.357131950552244"/>
+                                 <point lon="-71.09331462177917" lat="42.35166127043902"/>
+                             </polygon>
+                              <explanation>
+                                 <B>Hint:</B> Back bay was a land fill into the Charles River basin
                               </explanation>
                           </matches>
                        </constraints>
@@ -597,10 +606,6 @@ class GeometryBlock(XBlock):
 
     has_children = True
 
-    def evaluate(self):
-        """Evaluates the constraint and returns True/False."""
-        raise NotImplementedError("Should not be calling base class method")
-
 class PointBlock(GeometryBlock):
 
     lat = Float(help="latitude", default=None, scope=Scope.content)
@@ -613,9 +618,25 @@ class PointBlock(GeometryBlock):
             'lon':self.lon
         }
 
-    def evaluate(self):
-        """Evaluates the constraint and returns True/False."""
-        raise NotImplementedError("Should not be calling base class method")
+class PolygonBlock(GeometryBlock):
+
+    has_children = True
+
+    @property
+    def points(self):
+        points = []
+        for child_id in self.children: #pylint: disable=E1101
+            child = self.runtime.get_block(child_id)
+            if isinstance(child,PointBlock):
+                points.append(child)
+        return points
+
+    @property
+    def data(self):
+        pts = []
+        for pt in self.points:
+            pts.append(pt.data)
+        return pts
 
 class AnswerBlock(XBlock):
 
@@ -664,7 +685,6 @@ class AnswerBlock(XBlock):
         return None
 
     problem_view = student_view
-
 
 class ConstraintsBlock(XBlock):
     """An XBlock that records the constraint definitions."""
@@ -755,7 +775,6 @@ class SliderBlock(XBlock):
 
     student_view = problem_view
 
-
 #**** HelpBlock is also used for "explanation" tags
 class HelpBlock(XBlock):
     """An XBlock that contains help-text for a slider."""
@@ -787,9 +806,6 @@ class HelpBlock(XBlock):
 
     student_view = problem_view
 
-
-
-
 class LayersBlock(XBlock):
     """An XBlock that records the layer definitions."""
 
@@ -812,7 +828,6 @@ class LayersBlock(XBlock):
         pass
 
     student_view = problem_view
-
 
 class LayerBlock(XBlock):
     """An XBlock that records the layer definition."""
@@ -855,8 +870,6 @@ class ParamBlock(XBlock):
         pass
 
     student_view = problem_view
-
-
 
 class LayerControlBlock(XBlock):
     """An XBlock that records the layer-control definition."""

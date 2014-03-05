@@ -21,61 +21,62 @@
 
 <script type="text/javascript">
 var app;
-var markerLayer;
+var markerLayer, polygonLayer;
 var markers = new Array();
+var polygons= new Array();
 
 var currentAnswer = null;  //what we're currently searching for with the currently selected tool
 
-            OpenLayers.Control.Click = OpenLayers.Class(OpenLayers.Control, {
-                defaultHandlerOptions: {
-                    'single': true,
-                    'double': false,
-                    'pixelTolerance': 0,
-                    'stopSingle': false,
-                    'stopDouble': false
-                },
+var CLICK_CONTROL = OpenLayers.Class(OpenLayers.Control, {
+    defaultHandlerOptions: {
+        'single': true,
+        'double': false,
+        'pixelTolerance': 0,
+        'stopSingle': false,
+        'stopDouble': false
+    },
 
-                initialize: function(options) {
-                    this.handlerOptions = OpenLayers.Util.extend(
-                        {}, this.defaultHandlerOptions
-                    );
-                    OpenLayers.Control.prototype.initialize.apply(
-                        this, arguments
-                    ); 
-                    this.handler = new OpenLayers.Handler.Click(
-                        this, {
-                            'click': this.trigger
-                        }, this.handlerOptions
-                    );
-                }, 
+    initialize: function(options) {
+        this.handlerOptions = OpenLayers.Util.extend(
+            {}, this.defaultHandlerOptions
+        );
+        OpenLayers.Control.prototype.initialize.apply(
+            this, arguments
+        );
+        this.handler = new OpenLayers.Handler.Click(
+            this, {
+                'click': this.trigger
+            }, this.handlerOptions
+        );
+    },
 
-                trigger: function(e) {
-                    var map = e.object;
-                    var lonlat = map.getLonLatFromPixel(e.xy);
-                    var Geographic  = new OpenLayers.Projection("EPSG:4326"); 
-                    var Mercator = new OpenLayers.Projection("EPSG:900913");
-                    var point = new OpenLayers.Geometry.Point(lonlat.lon, lonlat.lat).transform(Mercator, Geographic);
-                    var size = new OpenLayers.Size(21,25);
-                    var offset = new OpenLayers.Pixel(-size.w/2, -size.h);
-                    var icon = new OpenLayers.Icon('http://www.openlayers.org/dev/img/marker.png',size,offset);
-                    icon.imageDiv.firstChild.setAttribute("style","background-color:"+currentAnswer.color);
+    trigger: function(e) {
+        var map = e.object;
+        var lonlat = map.getLonLatFromPixel(e.xy);
+        var Geographic  = new OpenLayers.Projection("EPSG:4326");
+        var Mercator = new OpenLayers.Projection("EPSG:900913");
+        var point = new OpenLayers.Geometry.Point(lonlat.lon, lonlat.lat).transform(Mercator, Geographic);
+        var size = new OpenLayers.Size(21,25);
+        var offset = new OpenLayers.Pixel(-size.w/2, -size.h);
+        var icon = new OpenLayers.Icon('http://www.openlayers.org/dev/img/marker.png',size,offset);
+        icon.imageDiv.firstChild.setAttribute("style","background-color:"+currentAnswer.color);
 
-                    if( markers[currentAnswer.id] ) {
-                        markerLayer.removeMarker(markers[currentAnswer.id]);
-                    }
-                    markers[currentAnswer.id] = new OpenLayers.Marker(lonlat,icon);
-                    markerLayer.addMarker(markers[currentAnswer.id]);
+        if( markers[currentAnswer.id] ) {
+            markerLayer.removeMarker(markers[currentAnswer.id]);
+        }
+        markers[currentAnswer.id] = new OpenLayers.Marker(lonlat,icon);
+        markerLayer.addMarker(markers[currentAnswer.id]);
 
-                    MESSAGING.getInstance().send(
-                        new Message("point-response",
-                            {
-                                point: {lat:point.x, lon:point.y},
-                                answer: currentAnswer
-                            }
-                        )
-                    );
+        MESSAGING.getInstance().send(
+            new Message("point-response",
+                {
+                    point: {lat:point.x, lon:point.y},
+                    answer: currentAnswer
                 }
-	    });
+            )
+        );
+    }
+});
 
 function getLayerLegendInfo( layers, layer ) {
    for( var i=0; i<layers.length; i++ ) {
@@ -134,21 +135,45 @@ Ext.onReady(function() {
     };
 
     Ext.apply(config, {{ config }});
-      
     
     app = new GeoExplorer.Viewer(config);
-//console.log("==============================================");
-//console.log("app.config.map.layers = "+JSON.stringify(app.config.map.layers));
-//console.log("==============================================");
 
     MESSAGING.getInstance().registerHandler("info", function(m) { alert("the slave code received this 'info' message: "+m.getMessage()); });
-//    setTimeout(function() {MESSAGING.getInstance().send(new Message("info","ad-hoc message from slave"));}, 1500);
 
     app.on("ready", function() {
 
         markerLayer = new OpenLayers.Layer.Markers("worldmap-markers");
+        polygonLayer = new OpenLayers.Layer.Vector("worldmap-polygons", {
+            styleMap: new OpenLayers.StyleMap({
+                fillColor: "#aaaaaa",
+                fillOpacity: 0.5
+            })
+        });
 
-        app.mapPanel.map.addLayer(markerLayer);
+        var polygonControl =
+            new OpenLayers.Control.DrawFeature(polygonLayer, OpenLayers.Handler.Polygon, {
+                callbacks: {
+                    done: function(geo) {
+                       // window.alert('done: #points: '+geo.components[0].components.length);
+//                       this.drawFeature(geo);
+                        var feature = new OpenLayers.Feature.Vector(geo);
+                        var proceed = this.layer.events.triggerEvent( "sketchcomplete", {feature:feature});
+                        if( proceed !== false ) {
+                           feature.state = OpenLayers.State.INSERT;
+                           if( polygons[currentAnswer.id] ) {
+                              this.layer.removeFeatures([polygons[currentAnswer.id]]);
+                           }
+                           polygons[currentAnswer.id] = feature;
+                           this.layer.addFeatures([feature]);
+                           this.featureAdded(feature);
+                           this.events.triggerEvent("featureadded",{feature:feature});
+                        }
+
+                    }
+                }
+            });
+
+        app.mapPanel.map.addLayers([markerLayer,polygonLayer]);
 
         app.mapPanel.map.events.register("moveend", app.mapPanel, function(){
             MESSAGING.getInstance().send(new Message("moveend",{center:app.mapPanel.map.getCenter(),zoomLevel:app.mapPanel.map.getZoom()}));
@@ -186,20 +211,30 @@ Ext.onReady(function() {
             }
         });
 
-        var click = new OpenLayers.Control.Click();
-        app.mapPanel.map.addControl(click);
+        var markerControl = new CLICK_CONTROL();
+        app.mapPanel.map.addControl(markerControl);
+        app.mapPanel.map.addControl(polygonControl);
 
         MESSAGING.getInstance().registerHandler("reset-answer-tool", function(m) {
-           click.deactivate();
+           markerControl.deactivate();
+           polygonControl.deactivate();
            currentAnswer = null;
         });
 
         MESSAGING.getInstance().registerHandler("set-answer-tool", function(e) {
             var message = JSON.parse(e.message);
-            if( message.type == 'point' ) {
+            currentAnswer = message;
+            if( currentAnswer.type == 'point' ) {
                Ext.example.msg("Info","Click the map at the location requested");
-               currentAnswer = message;
-               click.activate();
+               markerControl.activate();
+            } else if( currentAnswer.type == 'polygon' ) {
+               // window.alert("color="+currentAnswer.color);
+                polygonLayer.styleMap = new OpenLayers.StyleMap({
+                        fillColor: '#'+currentAnswer.color,
+                        fillOpacity: 0.3
+                    });
+                Ext.example.msg("Info","Please click on the boundaries of a polygon.<br/>Double-click to end drawing.");
+                polygonControl.activate();
             }
         });
 

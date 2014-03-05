@@ -167,6 +167,8 @@ function WorldMapXBlock(runtime, element) {
              }
         });
 
+
+        //********************** POINT & POLYGON TOOLS**************************
         $.ajax({
              type: "POST",
              url: runtime.handlerUrl(element, 'getAnswers'),
@@ -196,6 +198,8 @@ function WorldMapXBlock(runtime, element) {
              }
         });
 
+
+        //****************** LAYER CONTROLS ***************************
         $('.layerControls',element).dynatree({
             title: "LayerControls",
 //            minExpandLevel: 1, // 1=rootnote not collapsible
@@ -247,11 +251,12 @@ function WorldMapXBlock(runtime, element) {
                         console.log("Failed to test point-response for map: "+$('.frame', el).attr('id'));
                     } else {  //TODO: Fix url to point to local image
                         var div = $('#score-'+result.answer.id);
-                        div.html("<img src='/resource/equality_demo/public/images/"+(result.isHit?"correct":"incorrect")+"-icon.png'/>");
                         if( result.isHit ) {
+                            div.html("<img src='/resource/equality_demo/public/images/correct-icon.png'/>");
                             MESSAGING.getInstance().sendAll( new Message("reset-answer-tool",null));
                             info("Correct!", 1000);
                         } else {
+                            div.html("<img src='/resource/equality_demo/public/images/incorrect-icon.png'/>");
                             var nAttempt = div.attr("nAttempts");
                             if( nAttempt == undefined ) nAttempt = 0;
                             nAttempt++;
@@ -289,18 +294,6 @@ function WorldMapXBlock(runtime, element) {
         return $('.frame', element).attr('id');
     }
 
-//    function on_click(el, location) {
-//        $.ajax({
-//            type: "POST",
-//            url: runtime.handlerUrl(el, 'test_click'),
-//            data: location,
-//            success: function(result) {
-//                if( result.hit ) {
-//                    alert("Congratulations - you found it");
-//                }
-//            }
-//        });
-//    }
     function on_setZoomLevel(el, level) {
         $.ajax({
             type: "POST",
