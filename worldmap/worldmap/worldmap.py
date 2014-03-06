@@ -10,7 +10,7 @@ from xblock.core import XBlock
 from xblock.fields import Scope, Integer, Any, String, Float, Dict, Boolean,List
 from xblock.fragment import Fragment
 from lxml import etree
-from shapely.geometry import Point
+from shapely.geometry.polygon import Polygon
 
 
 log = logging.getLogger(__name__)
@@ -179,6 +179,34 @@ class WorldMapXBlock(XBlock):
         }
 
     @XBlock.json_handler
+    def polygon_response(self, data, suffix=''):
+        arr = []
+        for pt in data['answer']['constraints'][0]['geometry']:
+            arr.append((pt['lon']+360., pt['lat']))
+        correctPolygon = Polygon(arr)
+
+        constraint = data['answer']['constraints'][0]
+        #percentAnswerInsidePaddedGeometry = constraint['percentAnswerInsidePaddedGeometry']
+        #percentGeometryInsidePaddedAnswer = constraint['percentGeometryInsidePaddedAnswer']
+        #
+        #paddedGeometry = correctPolygon.buffer(padding)
+
+        arr = []
+        for pt in data['polygon']:
+            arr.append((pt['lon']+360., pt['lat']))
+        answerPolygon = Polygon(arr)
+
+        #paddedAnswer = answerPolygon.buffer(padding)
+
+        isHit = (answerPolygon.difference(correctPolygon).area*100/correctPolygon.area < 10) \
+              & (answerPolygon.difference(correctPolygon).area*100/answerPolygon.area < 10) \
+              & (correctPolygon.difference(answerPolygon).area*100/correctPolygon.area < 10)
+        return {
+            'answer':data['answer'],
+            'isHit': isHit
+        }
+
+    @XBlock.json_handler
     def getAnswers(self, data, suffix=''):
         if isinstance(self.get_parent(), WorldmapQuizBlock):
             arr = []
@@ -266,7 +294,7 @@ class WorldMapXBlock(XBlock):
             ("WorldMapXBlock",
              """
              <vertical_demo>
-               <worldmap-quiz padding='500'>
+               <worldmap-quiz padding='10'>
                     <explanation>
                          <B>A quiz about the Boston area</B>
                     </explanation>

@@ -53,9 +53,8 @@ var CLICK_CONTROL = OpenLayers.Class(OpenLayers.Control, {
     trigger: function(e) {
         var map = e.object;
         var lonlat = map.getLonLatFromPixel(e.xy);
-        var Geographic  = new OpenLayers.Projection("EPSG:4326");
-        var Mercator = new OpenLayers.Projection("EPSG:900913");
-        var point = new OpenLayers.Geometry.Point(lonlat.lon, lonlat.lat).transform(Mercator, Geographic);
+        var point = transformToLonLat(lonlat);
+
         var size = new OpenLayers.Size(21,25);
         var offset = new OpenLayers.Pixel(-size.w/2, -size.h);
         var icon = new OpenLayers.Icon('http://www.openlayers.org/dev/img/marker.png',size,offset);
@@ -91,6 +90,12 @@ function getLayerLegendInfo( layers, layer ) {
       }
    }
    return null;
+}
+
+function transformToLonLat( lonlat ) {
+    var Geographic  = new OpenLayers.Projection("EPSG:4326");
+    var Mercator = new OpenLayers.Projection("EPSG:900913");
+    return new OpenLayers.Geometry.Point(lonlat.lon, lonlat.lat).transform(Mercator, Geographic);
 }
 
 Ext.onReady(function() {
@@ -156,18 +161,33 @@ Ext.onReady(function() {
                     done: function(geo) {
                        // window.alert('done: #points: '+geo.components[0].components.length);
 //                       this.drawFeature(geo);
-                        var feature = new OpenLayers.Feature.Vector(geo);
-                        var proceed = this.layer.events.triggerEvent( "sketchcomplete", {feature:feature});
-                        if( proceed !== false ) {
-                           feature.state = OpenLayers.State.INSERT;
-                           if( polygons[currentAnswer.id] ) {
-                              this.layer.removeFeatures([polygons[currentAnswer.id]]);
-                           }
-                           polygons[currentAnswer.id] = feature;
-                           this.layer.addFeatures([feature]);
-                           this.featureAdded(feature);
-                           this.events.triggerEvent("featureadded",{feature:feature});
-                        }
+                       var polygon = [];
+                       for( var i=0;i<geo.components[0].components.length; i++) {
+                           var point = transformToLonLat({lon: geo.components[0].components[i].x, lat:geo.components[0].components[i].y});
+                           polygon.push({lon: point.x, lat: point.y});
+                       }
+
+                       MESSAGING.getInstance().send(
+                           new Message("polygon-response",
+                               {
+                                   polygon: polygon,
+                                   answer: currentAnswer
+                               }
+                           )
+                       );
+
+                       var feature = new OpenLayers.Feature.Vector(geo);
+                       var proceed = this.layer.events.triggerEvent( "sketchcomplete", {feature:feature});
+                       if( proceed !== false ) {
+                          feature.state = OpenLayers.State.INSERT;
+                          if( polygons[currentAnswer.id] ) {
+                             this.layer.removeFeatures([polygons[currentAnswer.id]]);
+                          }
+                          polygons[currentAnswer.id] = feature;
+                          this.layer.addFeatures([feature]);
+                          this.featureAdded(feature);
+                          this.events.triggerEvent("featureadded",{feature:feature});
+                       }
 
                     }
                 }

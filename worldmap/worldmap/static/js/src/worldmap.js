@@ -273,6 +273,43 @@ function WorldMapXBlock(runtime, element) {
                 }
             });
         })
+
+        MESSAGING.getInstance().addHandler(getUniqueId(),"polygon-response", function(m) {
+            var data = JSON.parse(JSON.parse(m.message));
+            $.ajax({
+                type: "POST",
+                url: runtime.handlerUrl(element, 'polygon_response'),
+                data: JSON.stringify(data),
+                success: function(result) {
+                    if( !result ) {
+                        console.log("Failed to test point-response for map: "+$('.frame', el).attr('id'));
+                    } else {  //TODO: Fix url to point to local image
+                        var div = $('#score-'+result.answer.id);
+                        if( result.isHit ) {
+                            div.html("<img src='/resource/equality_demo/public/images/correct-icon.png'/>");
+                            MESSAGING.getInstance().sendAll( new Message("reset-answer-tool",null));
+                            info("Correct!", 1000);
+                        } else {
+                            div.html("<img src='/resource/equality_demo/public/images/incorrect-icon.png'/>");
+                            var nAttempt = div.attr("nAttempts");
+                            if( nAttempt == undefined ) nAttempt = 0;
+                            nAttempt++;
+                            div.attr("nAttempts",nAttempt);
+                            var hintAfterAttempt = result.answer.hintAfterAttempt;
+                            if( hintAfterAttempt != null ) {
+                                if( nAttempt % hintAfterAttempt == 0) {
+                                    info(result.answer.explanation);
+                                }
+                            }
+                        }
+
+                    }
+                }
+            });
+        })
+
+
+
     });
 
     var layerVisibilityCache = [];
