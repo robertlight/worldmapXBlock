@@ -15,7 +15,7 @@
             <!-- html to display to explain this part of the proper answer -->
         </explanation>
         <constraints>
-            <matches percentOfGrade="25" percentAnswerInsidePaddedGeometry="100" percentGeometryInsidePaddedAnswer="100">
+            <matches percentOfGrade="25" percentMatc="100">
                 <geometry>
                 </geometry>
                 <explanation>

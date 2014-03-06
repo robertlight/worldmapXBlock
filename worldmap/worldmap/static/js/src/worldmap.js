@@ -264,7 +264,12 @@ function WorldMapXBlock(runtime, element) {
                             var hintAfterAttempt = result.answer.hintAfterAttempt;
                             if( hintAfterAttempt != null ) {
                                 if( nAttempt % hintAfterAttempt == 0) {
-                                    info(result.answer.explanation);
+                                    var html = "<ul>";
+                                    for( var i=0;i<result.answer.constraints.length; i++) {
+                                        html += "<li>"+result.answer.constraints[i].explanation+"</li>";
+                                    }
+                                    html += "</ul>";
+                                    info(html);
                                 }
                             }
                         }
@@ -298,7 +303,12 @@ function WorldMapXBlock(runtime, element) {
                             var hintAfterAttempt = result.answer.hintAfterAttempt;
                             if( hintAfterAttempt != null ) {
                                 if( nAttempt % hintAfterAttempt == 0) {
-                                    info(result.answer.explanation);
+                                    var html = "<ul>";
+                                    for( var i=0;i<result.answer.constraints.length; i++) {
+                                        html += "<li>"+result.answer.constraints[i].explanation+"</li>";
+                                    }
+                                    html += "</ul>";
+                                    info(html);
                                 }
                             }
                         }

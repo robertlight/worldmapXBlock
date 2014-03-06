@@ -186,21 +186,16 @@ class WorldMapXBlock(XBlock):
         correctPolygon = Polygon(arr)
 
         constraint = data['answer']['constraints'][0]
-        #percentAnswerInsidePaddedGeometry = constraint['percentAnswerInsidePaddedGeometry']
-        #percentGeometryInsidePaddedAnswer = constraint['percentGeometryInsidePaddedAnswer']
-        #
-        #paddedGeometry = correctPolygon.buffer(padding)
+        percentMatch = constraint['percentMatch']
 
         arr = []
         for pt in data['polygon']:
             arr.append((pt['lon']+360., pt['lat']))
         answerPolygon = Polygon(arr)
 
-        #paddedAnswer = answerPolygon.buffer(padding)
-
-        isHit = (answerPolygon.difference(correctPolygon).area*100/correctPolygon.area < 10) \
-              & (answerPolygon.difference(correctPolygon).area*100/answerPolygon.area < 10) \
-              & (correctPolygon.difference(answerPolygon).area*100/correctPolygon.area < 10)
+        isHit = (answerPolygon.difference(correctPolygon).area*100/correctPolygon.area < (100-percentMatch)) \
+              & (answerPolygon.difference(correctPolygon).area*100/answerPolygon.area < (100-percentMatch)) \
+              & (correctPolygon.difference(answerPolygon).area*100/correctPolygon.area < (100-percentMatch))
         return {
             'answer':data['answer'],
             'isHit': isHit
@@ -294,16 +289,16 @@ class WorldMapXBlock(XBlock):
             ("WorldMapXBlock",
              """
              <vertical_demo>
-               <worldmap-quiz padding='10'>
+               <worldmap-quiz padding='500'>
                     <explanation>
                          <B>A quiz about the Boston area</B>
                     </explanation>
                     <answer id='foobar' color='00FF00' type='point' hintAfterAttempt='3'>
                        <explanation>
-                          <B>Hint:</B> Where is the biggest island in Boston harbor?
+                          Where is the biggest island in Boston harbor?
                        </explanation>
                        <constraints>
-                          <matches percentOfGrade="25" percentAnswerInsidePaddedGeometry="100" percentGeometryInsidePaddedAnswer="100">
+                          <matches percentOfGrade="25" percentMatch="100" >
                               <point lat="-70.9657058456866" lon="42.32011232390349"/>
                               <explanation>
                                  <B> Look at boston harbor - pick the biggest island </B>
@@ -316,7 +311,7 @@ class WorldMapXBlock(XBlock):
                           Where is the land bridge that formed Nahant bay?
                        </explanation>
                        <constraints>
-                          <matches percentOfGrade="25" percentAnswerInsidePaddedGeometry="100" percentGeometryInsidePaddedAnswer="100">
+                          <matches percentOfGrade="25" percentMatch="100">
                               <point lat="-70.93824002537393" lon="42.445896458204764"/>
                               <explanation>
                                  <B>Hint:</B> Look for Nahant Bay on the map
@@ -324,12 +319,12 @@ class WorldMapXBlock(XBlock):
                           </matches>
                        </constraints>
                     </answer>
-                    <answer id='area' color='FF00FF' type='polygon'>
+                    <answer id='area' color='FF00FF' type='polygon' hintAfterAttempt='3'>
                        <explanation>
                           Draw a polygon around "back bay"?
                        </explanation>
                        <constraints>
-                          <matches percentOfGrade="25" percentAnswerInsidePaddedGeometry="100" percentGeometryInsidePaddedAnswer="80">
+                          <matches percentOfGrade="25" percentMatch="80">
                              <polygon>
                                  <point lon="-71.09350774082822" lat="42.35148683512319"/>
                                  <point lon="-71.09275672230382" lat="42.34706235935522"/>
@@ -616,15 +611,14 @@ class ConstraintBlock(XBlock):
 class MatchesConstraintBlock(ConstraintBlock):
 
     has_children = True
-    percentAnswerInsidePaddedGeometry= Float("percent of answer within the padded geometry of the constraint", default=100, scope=Scope.content)
-    percentGeometryInsidePaddedAnswer= Float("percent of constraint's geometry within the padded answer", default=100, scope=Scope.content)
+    percentMatch= Float("percent of answer matching ideal geometry", default=80, scope=Scope.content)
 
     @property
     def data(self):
         return {
-            'percentAnswerInsidePaddedGeometry':self.percentAnswerInsidePaddedGeometry,
-            'percentGeometryInsidePaddedAnswer':self.percentGeometryInsidePaddedAnswer,
-            'geometry':self.geometry.data
+            'percentMatch':self.percentMatch,
+            'geometry':self.geometry.data,
+            'explanation':self.explanation.content
         }
     def evaluate(self):
         """Evaluates the constraint and returns True/False."""
