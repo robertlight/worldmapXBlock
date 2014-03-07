@@ -199,12 +199,12 @@ class WorldMapXBlock(XBlock):
                     percentMatch = constraint['percentMatch']
 
 
-                    isHit = isHit & (answerPolygon.difference(constraintPolygon).area*100/constraintPolygon.area < (100-percentMatch)) \
-                          & (answerPolygon.difference(constraintPolygon).area*100/answerPolygon.area < (100-percentMatch)) \
-                          & (constraintPolygon.difference(answerPolygon).area*100/constraintPolygon.area < (100-percentMatch))
+                    isHit = isHit and (answerPolygon.difference(constraintPolygon).area*100/constraintPolygon.area < (100-percentMatch)) \
+                          and (answerPolygon.difference(constraintPolygon).area*100/answerPolygon.area < (100-percentMatch)) \
+                          and (constraintPolygon.difference(answerPolygon).area*100/constraintPolygon.area < (100-percentMatch))
 
                 elif( constraint['type'] == 'includes'):
-                    isHit = isHit & ((constraintPolygon.difference(answerPolygon)).area == 0.0)
+                    isHit = isHit and (constraintPolygon.difference(answerPolygon)).area == 0.0
         except TopologicalError:
             return {
                 'answer':data['answer'],
@@ -279,6 +279,20 @@ class WorldMapXBlock(XBlock):
             #self.threadLock.release()
             pass
         return True
+
+    @XBlock.json_handler
+    def getViewInfo(self, data, suffix=''):
+        """
+        return most recent zoomLevel, center location
+        """
+        if self.zoomLevel == None or self.centerLat == None or self.centerLon == None:
+            return None
+        else:
+            return {
+                'zoomLevel': self.zoomLevel,
+                'centerLat': self.centerLat,
+                'centerLon': self.centerLon
+            }
 
     @XBlock.json_handler
     def set_center(self, data, suffix=''):

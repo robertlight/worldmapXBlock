@@ -14,18 +14,24 @@ function WorldMapXBlock(runtime, element) {
     MESSAGING.getInstance().addHandler(getUniqueId(),"answer-tool-done", function(m) { on_answer_tool_done(element, m.getMessage()); });
 
     MESSAGING.getInstance().addHandler(getUniqueId(),"portalReady", function(m) {
-        if( $('.frame', element).attr('centerLat') != 'None' ) {
-           MESSAGING.getInstance().send(
-               getUniqueId(),
-               new Message("setCenter", {
-                   zoomLevel: $('.frame', element).attr('zoomLevel'),
-                   centerLat: $('.frame', element).attr('centerLat'),
-                   centerLon: $('.frame', element).attr('centerLon')
-               })
-           );
-        } else {
-            window.alert("no view position found in <frame> tag");
-        }
+
+        $.ajax({
+             type: "POST",
+             url: runtime.handlerUrl(element, 'getViewInfo'),
+             data: "null",
+             success: function(result) {
+                if( result ) {
+                   MESSAGING.getInstance().send(
+                       getUniqueId(),
+                       new Message("setCenter", {
+                           zoomLevel: result.zoomLevel,
+                           centerLat: result.centerLat,
+                           centerLon: result.centerLon
+                       })
+                   );
+                }
+             }
+        });
 
         selectLayer(true,$('.frame',element).attr("baseLayer"));
 
