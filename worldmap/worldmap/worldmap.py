@@ -5,12 +5,14 @@ import pkg_resources
 import logging
 import threading
 import math
+import sys
 
 from xblock.core import XBlock
 from xblock.fields import Scope, Integer, Any, String, Float, Dict, Boolean,List
 from xblock.fragment import Fragment
 from lxml import etree
 from shapely.geometry.polygon import Polygon
+from shapely.geos import TopologicalError
 
 
 log = logging.getLogger(__name__)
@@ -180,22 +182,38 @@ class WorldMapXBlock(XBlock):
 
     @XBlock.json_handler
     def polygon_response(self, data, suffix=''):
-        arr = []
-        for pt in data['answer']['constraints'][0]['geometry']:
-            arr.append((pt['lon']+360., pt['lat']))
-        correctPolygon = Polygon(arr)
-
-        constraint = data['answer']['constraints'][0]
-        percentMatch = constraint['percentMatch']
 
         arr = []
         for pt in data['polygon']:
             arr.append((pt['lon']+360., pt['lat']))
         answerPolygon = Polygon(arr)
 
-        isHit = (answerPolygon.difference(correctPolygon).area*100/correctPolygon.area < (100-percentMatch)) \
-              & (answerPolygon.difference(correctPolygon).area*100/answerPolygon.area < (100-percentMatch)) \
-              & (correctPolygon.difference(answerPolygon).area*100/correctPolygon.area < (100-percentMatch))
+        isHit = True
+        try:
+            for constraint in data['answer']['constraints']:
+                arr = []
+                for pt in constraint['geometry']:
+                    arr.append((pt['lon']+360., pt['lat']))
+                constraintPolygon = Polygon(arr)
+                if( constraint['type'] == 'matches'):
+                    percentMatch = constraint['percentMatch']
+
+
+                    isHit = isHit & (answerPolygon.difference(constraintPolygon).area*100/constraintPolygon.area < (100-percentMatch)) \
+                          & (answerPolygon.difference(constraintPolygon).area*100/answerPolygon.area < (100-percentMatch)) \
+                          & (constraintPolygon.difference(answerPolygon).area*100/constraintPolygon.area < (100-percentMatch))
+
+                elif( constraint['type'] == 'includes'):
+                    isHit = isHit & ((constraintPolygon.difference(answerPolygon)).area == 0.0)
+        except TopologicalError:
+            return {
+                'answer':data['answer'],
+                'isHit': False,
+                'error': 'Invalid polygon topology<br/><img src="http://robertlight.com/tmp/InvalidTopology.png"/>'
+            }
+        except:
+            print "Unexpected error: ", sys.exc_info()[0]
+
         return {
             'answer':data['answer'],
             'isHit': isHit
@@ -274,7 +292,10 @@ class WorldMapXBlock(XBlock):
             self.centerLat = data.get('centerLat')
             self.centerLon = data.get('centerLon')
             self.zoomLevel = data.get('zoomLevel')
-
+            try:
+                print "center=(",self.centerLat,",",self.centerLon,")  zoom=",self.zoomLevel;
+            except:
+                print "Error: ", sys.exc_info()[0]
         return True
 
 
@@ -343,10 +364,25 @@ class WorldMapXBlock(XBlock):
                                  <point lon="-71.07483956608469" lat="42.357131950552244"/>
                                  <point lon="-71.09331462177917" lat="42.35166127043902"/>
                              </polygon>
-                              <explanation>
+                             <explanation>
                                  <B>Hint:</B> Back bay was a land fill into the Charles River basin
-                              </explanation>
+                             </explanation>
                           </matches>
+                          <includes percentOfGrade="25" >
+                             <polygon>
+                                <point lon="-71.07466790470745" lat="42.35719537593463"/>
+                                <point lon="-71.08492467197995" lat="42.35399231410341"/>
+                                <point lon="-71.08543965611076" lat="42.35335802506911"/>
+                                <point lon="-71.08822915348655" lat="42.35250172471913"/>
+                                <point lon="-71.08814332279839" lat="42.352279719020736"/>
+                                <point lon="-71.08689877781501" lat="42.35253343975517"/>
+                                <point lon="-71.07411000523211" lat="42.355958569427614"/>
+                                <point lon="-71.07466790470745" lat="42.35719537593463"/>
+                             </polygon>
+                             <explanation>
+                                <B>Must</B> include the esplanade
+                             </explanation>
+                          </includes>
                        </constraints>
                     </answer>
 
@@ -604,10 +640,6 @@ class ConstraintBlock(XBlock):
                 return child
         raise RuntimeError("no geometry found")
 
-    def evaluate(self):
-        """Evaluates the constraint and returns True/False."""
-        raise NotImplementedError("Should not be calling base class method")
-
 class MatchesConstraintBlock(ConstraintBlock):
 
     has_children = True
@@ -616,13 +648,23 @@ class MatchesConstraintBlock(ConstraintBlock):
     @property
     def data(self):
         return {
+            'type':'matches',
             'percentMatch':self.percentMatch,
             'geometry':self.geometry.data,
             'explanation':self.explanation.content
         }
-    def evaluate(self):
-        """Evaluates the constraint and returns True/False."""
-        return True  #STUB
+
+class IncludesConstraintBlock(ConstraintBlock):
+
+    has_children = True
+
+    @property
+    def data(self):
+        return {
+            'type':'includes',
+            'geometry':self.geometry.data,
+            'explanation':self.explanation.content
+        }
 
 class GeometryBlock(XBlock):
 

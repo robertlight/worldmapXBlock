@@ -23,6 +23,8 @@ function WorldMapXBlock(runtime, element) {
                    centerLon: $('.frame', element).attr('centerLon')
                })
            );
+        } else {
+            window.alert("no view position found in <frame> tag");
         }
 
         selectLayer(true,$('.frame',element).attr("baseLayer"));
@@ -300,15 +302,20 @@ function WorldMapXBlock(runtime, element) {
                             if( nAttempt == undefined ) nAttempt = 0;
                             nAttempt++;
                             div.attr("nAttempts",nAttempt);
-                            var hintAfterAttempt = result.answer.hintAfterAttempt;
-                            if( hintAfterAttempt != null ) {
-                                if( nAttempt % hintAfterAttempt == 0) {
-                                    var html = "<ul>";
-                                    for( var i=0;i<result.answer.constraints.length; i++) {
-                                        html += "<li>"+result.answer.constraints[i].explanation+"</li>";
+
+                            if( result.error != null ) {
+                                error("<B>Error</B> "+result.error);
+                            } else {
+                                var hintAfterAttempt = result.answer.hintAfterAttempt;
+                                if( hintAfterAttempt != null ) {
+                                    if( nAttempt % hintAfterAttempt == 0) {
+                                        var html = "<ul>";
+                                        for( var i=0;i<result.answer.constraints.length; i++) {
+                                            html += "<li>"+result.answer.constraints[i].explanation+"</li>";
+                                        }
+                                        html += "</ul>";
+                                        info(html);
                                     }
-                                    html += "</ul>";
-                                    info(html);
                                 }
                             }
                         }
@@ -357,7 +364,7 @@ function WorldMapXBlock(runtime, element) {
         $.ajax({
             type: "POST",
             url: runtime.handlerUrl(el, 'set_center'),
-            data: JSON.stringify({centerLat: data.center.lat,  centerLon: data.center.lon, zoomLevel:data.zoomLevel}),
+            data: JSON.stringify({centerLat: data.center.y,  centerLon: data.center.x, zoomLevel:data.zoomLevel}),
             success: function(result) {
                 if( !result ) {
                     alert("Failed to setCenter for map: "+$('.frame', el).attr('id'));
@@ -470,6 +477,31 @@ function info(msgHtml, duration) {
 		  clickOverlay : false, // added in v2.0
 		  MinWidth : 250,
 		  TimeShown : duration,
+		  ShowTimeEffect : 200,
+		  HideTimeEffect : 200,
+		  LongTrip :20,
+		  HorizontalPosition : 'center',
+		  VerticalPosition : 'top',
+		  ShowOverlay : true,
+   		  ColorOverlay : '#000',
+		  OpacityOverlay : 0.3,
+		  onClosed : function(){ // added in v2.0
+
+		  },
+		  onCompleted : function(){ // added in v2.0
+
+		  }
+		});
+}
+
+function error(msgHtml) {
+      if( duration == undefined ) duration = 5000;
+      jError(
+		msgHtml,
+		{
+		  autoHide : false, // added in v2.0
+		  clickOverlay : false, // added in v2.0
+		  MinWidth : 250,
 		  ShowTimeEffect : 200,
 		  HideTimeEffect : 200,
 		  LongTrip :20,

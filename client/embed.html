@@ -92,6 +92,12 @@ function getLayerLegendInfo( layers, layer ) {
    return null;
 }
 
+function transformToXY( lonlat ) {
+    var Geographic  = new OpenLayers.Projection("EPSG:4326");
+    var Mercator = new OpenLayers.Projection("EPSG:900913");
+    return new OpenLayers.Geometry.Point(lonlat.lon, lonlat.lat).transform(Geographic,Mercator);
+}
+
 function transformToLonLat( lonlat ) {
     var Geographic  = new OpenLayers.Projection("EPSG:4326");
     var Mercator = new OpenLayers.Projection("EPSG:900913");
@@ -196,7 +202,8 @@ Ext.onReady(function() {
         app.mapPanel.map.addLayers([markerLayer,polygonLayer]);
 
         app.mapPanel.map.events.register("moveend", app.mapPanel, function(){
-            MESSAGING.getInstance().send(new Message("moveend",{center:app.mapPanel.map.getCenter(),zoomLevel:app.mapPanel.map.getZoom()}));
+            // calculate lat/lon
+            MESSAGING.getInstance().send(new Message("moveend",{center: transformToLonLat(app.mapPanel.map.getCenter()),zoomLevel:app.mapPanel.map.getZoom()}));
         });
 
         app.mapPanel.map.events.register("zoomend", app.mapPanel.map, function(){
@@ -212,7 +219,9 @@ Ext.onReady(function() {
         MESSAGING.getInstance().registerHandler("setZoomLevel", function(m) { app.mapPanel.map.zoomTo(m.getMessage()); });
         MESSAGING.getInstance().registerHandler("setCenter",function(m) {
             var data = m.getMessage();
-            app.mapPanel.map.setCenter([data.centerLon, data.centerLat],data.zoomLevel,false,false);
+            Ext.example.msg("Info","setCenter: "+data.centerLat+","+data.centerLon+"   zoom="+data.zoomLevel);
+            var pt = transformToXY({lon:data.centerLon,lat:data.centerLat});
+            app.mapPanel.map.setCenter([pt.x, pt.y],data.zoomLevel,false,false);
         });
         MESSAGING.getInstance().registerHandler("setLayers",function(m) {
             var data = JSON.parse(m.getMessage());
