@@ -12,10 +12,24 @@ from xblock.fields import Scope, Integer, Any, String, Float, Dict, Boolean,List
 from xblock.fragment import Fragment
 from lxml import etree
 from shapely.geometry.polygon import Polygon
+from shapely.geometry.point import Point
 from shapely.geos import TopologicalError
 
 
 log = logging.getLogger(__name__)
+
+
+#*************************** UTILITY FUNCTIONS ************************************************
+def makePoint(pt):
+    return Point(pt['lon']+360., pt['lat'])      #pad longitude by 360 degrees to avoid int'l date line problems
+
+def makePolygon(list):
+    arr = []
+    for pt in list:
+        arr.append((pt['lon']+360., pt['lat']))   #pad longitude by 360 degrees to avoid int'l date line problems
+    return Polygon(arr)
+
+#***********************************************************************************************
 
 class WorldMapXBlock(XBlock):
     """
@@ -191,20 +205,22 @@ class WorldMapXBlock(XBlock):
         isHit = True
         try:
             for constraint in data['answer']['constraints']:
-                arr = []
-                for pt in constraint['geometry']:
-                    arr.append((pt['lon']+360., pt['lat']))
-                constraintPolygon = Polygon(arr)
                 if( constraint['type'] == 'matches'):
-                    percentMatch = constraint['percentMatch']
 
+                    constraintPolygon = makePolygon(constraint['geometry']['points'])
+                    percentMatch = constraint['percentMatch']
 
                     isHit = isHit and (answerPolygon.difference(constraintPolygon).area*100/constraintPolygon.area < (100-percentMatch)) \
                           and (answerPolygon.difference(constraintPolygon).area*100/answerPolygon.area < (100-percentMatch)) \
                           and (constraintPolygon.difference(answerPolygon).area*100/constraintPolygon.area < (100-percentMatch))
 
                 elif( constraint['type'] == 'includes'):
-                    isHit = isHit and (constraintPolygon.difference(answerPolygon)).area == 0.0
+                    if( constraint['geometry']['type'] == 'polygon' ):
+
+                        isHit = isHit and (makePolygon(constraint['geometry']['points']).difference(answerPolygon)).area == 0.0
+                    elif( constraint['geometry']['type'] == 'point' ):
+                        isHit = isHit and answerPolygon.contains(makePoint(constraint['geometry']))
+
         except TopologicalError:
             return {
                 'answer':data['answer'],
@@ -395,6 +411,12 @@ class WorldMapXBlock(XBlock):
                              </polygon>
                              <explanation>
                                 <B>Must</B> include the esplanade
+                             </explanation>
+                          </includes>
+                          <includes percentOfGrade="25" >
+                             <point lon="-71.08303639683305" lat="42.341527361626746"/>
+                             <explanation>
+                                <B>Must</B> include corner of <i>Mass ave.</i> and <i>SW Corridor Park</i>
                              </explanation>
                           </includes>
                        </constraints>
@@ -692,6 +714,7 @@ class PointBlock(GeometryBlock):
     @property
     def data(self):
         return {
+            'type':'point',
             'lat':self.lat,
             'lon':self.lon
         }
@@ -714,7 +737,10 @@ class PolygonBlock(GeometryBlock):
         pts = []
         for pt in self.points:
             pts.append(pt.data)
-        return pts
+        return {
+            'type': 'polygon',
+            'points':pts
+        }
 
 class AnswerBlock(XBlock):
 

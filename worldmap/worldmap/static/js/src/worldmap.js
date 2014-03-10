@@ -320,7 +320,7 @@ function WorldMapXBlock(runtime, element) {
                                             html += "<li>"+result.answer.constraints[i].explanation+"</li>";
                                         }
                                         html += "</ul>";
-                                        info(html);
+                                        info(html,6000);
                                     }
                                 }
                             }
@@ -501,7 +501,6 @@ function info(msgHtml, duration) {
 }
 
 function error(msgHtml) {
-      if( duration == undefined ) duration = 5000;
       jError(
 		msgHtml,
 		{
