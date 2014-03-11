@@ -214,12 +214,19 @@ class WorldMapXBlock(XBlock):
                           and (answerPolygon.difference(constraintPolygon).area*100/answerPolygon.area < (100-percentMatch)) \
                           and (constraintPolygon.difference(answerPolygon).area*100/constraintPolygon.area < (100-percentMatch))
 
-                elif( constraint['type'] == 'includes'):
+                elif( constraint['type'] == 'includes' or constraint['type'] == 'excludes'):
                     if( constraint['geometry']['type'] == 'polygon' ):
+                        constraintPolygon = makePolygon(constraint['geometry']['points'])
 
-                        isHit = isHit and (makePolygon(constraint['geometry']['points']).difference(answerPolygon)).area == 0.0
+                        if( constraint['type'] == 'includes' ):
+                            isHit = isHit and (constraintPolygon.difference(answerPolygon)).area == 0.0
+                        else:
+                            isHit = isHit and constraintPolygon.disjoint(answerPolygon)
                     elif( constraint['geometry']['type'] == 'point' ):
-                        isHit = isHit and answerPolygon.contains(makePoint(constraint['geometry']))
+                        if( constraint['type'] == 'includes' ):
+                            isHit = isHit and answerPolygon.contains(makePoint(constraint['geometry']))
+                        else:
+                            isHit = isHit and answerPolygon.disjoint(makePoint(constraint['geometry']))
 
         except TopologicalError:
             return {
@@ -374,7 +381,7 @@ class WorldMapXBlock(XBlock):
                        <explanation>
                           Draw a polygon around "back bay"?
                        </explanation>
-                       <constraints>
+                       <constraints hintDisplayTime='-1'>
                           <matches percentOfGrade="25" percentMatch="80">
                              <polygon>
                                  <point lon="-71.09350774082822" lat="42.35148683512319"/>
@@ -413,6 +420,22 @@ class WorldMapXBlock(XBlock):
                                 <B>Must</B> include the esplanade
                              </explanation>
                           </includes>
+                          <excludes percentOfGrade="25" >
+                             <point lon="-71.07071969303735" lat="42.351962566661165"/>
+                             <explanation>
+                                Must <B>not</B> include intersection of Boylston and Arlington Streets
+                             </explanation>
+                          </excludes>
+                          <excludes percentOfGrade="10" >
+                            <polygon>
+                               <point lon="-71.06994721684204" lat="42.349520439895464"/>
+                               <point lon="-71.0687455872032" lat="42.34856893624958"/>
+                               <point lon="-71.07140633854628" lat="42.34863237027384"/>
+                            </polygon>
+                            <explanation>
+                              Must <b>not</b> include <i>Bay Village</i>
+                            </explanation>
+                          </excludes>
                           <includes percentOfGrade="25" >
                              <point lon="-71.08303639683305" lat="42.341527361626746"/>
                              <explanation>
@@ -702,6 +725,18 @@ class IncludesConstraintBlock(ConstraintBlock):
             'explanation':self.explanation.content
         }
 
+class ExcludesConstraintBlock(ConstraintBlock):
+    has_children = True
+
+    @property
+    def data(self):
+        return {
+            'type':'excludes',
+            'geometry':self.geometry.data,
+            'explanation':self.explanation.content
+        }
+
+
 class GeometryBlock(XBlock):
 
     has_children = True
@@ -746,6 +781,8 @@ class AnswerBlock(XBlock):
 
     has_children = True
 
+    has_score = True
+
     id = String(help="unique id among multiple answer clauses", default=None, scope=Scope.content)
     color = String(help="the color of the polyline,polygon or marker", default="#FF0000", scope=Scope.content)
     type  = String(help="the type of the answer point|polygon|polyline|directed-polyline", default=None, scope=Scope.content)
@@ -770,7 +807,8 @@ class AnswerBlock(XBlock):
             'type':self.type,
             'explanation':self.explanation.content,
             'constraints':constraints,
-            'hintAfterAttempt': self.hintAfterAttempt
+            'hintAfterAttempt': self.hintAfterAttempt,
+            'hintDisplayTime' : self.hintDisplayTime
         }
     @property
     def explanation(self):
@@ -788,10 +826,20 @@ class AnswerBlock(XBlock):
                 return child.constraints
         return None
 
+    @property
+    def hintDisplayTime(self):
+        for child_id in self.children:  # pylint: disable=E1101
+            child = self.runtime.get_block(child_id)
+            if isinstance(child, ConstraintsBlock):
+                return child.hintDisplayTime
+        return None
+
     problem_view = student_view
 
 class ConstraintsBlock(XBlock):
     """An XBlock that records the constraint definitions."""
+
+    hintDisplayTime= Integer(help="how long to display hint (millis) use -1=until click", default="5000", scope=Scope.content)
 
     has_children = True
 

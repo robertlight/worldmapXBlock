@@ -289,6 +289,7 @@ function WorldMapXBlock(runtime, element) {
 
         MESSAGING.getInstance().addHandler(getUniqueId(),"polygon-response", function(m) {
             var data = JSON.parse(JSON.parse(m.message));
+
             $.ajax({
                 type: "POST",
                 url: runtime.handlerUrl(element, 'polygon_response'),
@@ -320,7 +321,7 @@ function WorldMapXBlock(runtime, element) {
                                             html += "<li>"+result.answer.constraints[i].explanation+"</li>";
                                         }
                                         html += "</ul>";
-                                        info(html,6000);
+                                        info(html,data.answer.hintDisplayTime);
                                     }
                                 }
                             }
@@ -477,9 +478,9 @@ function WorldMapXBlock(runtime, element) {
 function info(msgHtml, duration) {
       if( duration == undefined ) duration = 2500;
       jNotify(
-		msgHtml,
+		msgHtml + (duration < 0?"<br/><center><i>Click window to dismiss</i></center>":""),  //TODO: I18n
 		{
-		  autoHide : true, // added in v2.0
+		  autoHide : duration>0, // added in v2.0
 		  clickOverlay : false, // added in v2.0
 		  MinWidth : 250,
 		  TimeShown : duration,
@@ -505,7 +506,7 @@ function error(msgHtml) {
 		msgHtml,
 		{
 		  autoHide : false, // added in v2.0
-		  clickOverlay : false, // added in v2.0
+		  clickOverlay : true, // added in v2.0
 		  MinWidth : 250,
 		  ShowTimeEffect : 200,
 		  HideTimeEffect : 200,
