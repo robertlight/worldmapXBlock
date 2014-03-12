@@ -262,7 +262,7 @@ function WorldMapXBlock(runtime, element) {
                         if( result.isHit ) {
                             div.html("<img src='/resource/equality_demo/public/images/correct-icon.png'/>");
                             MESSAGING.getInstance().sendAll( new Message("reset-answer-tool",null));
-                            info("Correct!", 1000);
+                            info2("Correct!", 1000);
                         } else {
                             div.html("<img src='/resource/equality_demo/public/images/incorrect-icon.png'/>");
                             var nAttempt = div.attr("nAttempts");
@@ -277,7 +277,7 @@ function WorldMapXBlock(runtime, element) {
                                         html += "<li>"+result.answer.constraints[i].explanation+"</li>";
                                     }
                                     html += "</ul>";
-                                    info(html);
+                                    info2(html);
                                 }
                             }
                         }
@@ -302,7 +302,7 @@ function WorldMapXBlock(runtime, element) {
                         if( result.isHit ) {
                             div.html("<img src='/resource/equality_demo/public/images/correct-icon.png'/>");
                             MESSAGING.getInstance().sendAll( new Message("reset-answer-tool",null));
-                            info("Correct!", 1000);
+                            info2("Correct!", 1000);
                         } else {
                             div.html("<img src='/resource/equality_demo/public/images/incorrect-icon.png'/>");
                             var nAttempt = div.attr("nAttempts");
@@ -311,17 +311,20 @@ function WorldMapXBlock(runtime, element) {
                             div.attr("nAttempts",nAttempt);
 
                             if( result.error != null ) {
-                                error("<B>Error</B> "+result.error);
+                                error2("<B>Error</B> "+result.error);
                             } else {
                                 var hintAfterAttempt = result.answer.hintAfterAttempt;
                                 if( hintAfterAttempt != null ) {
                                     if( nAttempt % hintAfterAttempt == 0) {
                                         var html = "<ul>";
                                         for( var i=0;i<result.answer.constraints.length; i++) {
-                                            html += "<li>"+result.answer.constraints[i].explanation+"</li>";
+                                            var constraint = result.answer.constraints[i];
+                                            if( !constraint.satisfied ) {
+                                                html += "<li>"+constraint.explanation+"</li>";
+                                            }
                                         }
                                         html += "</ul>";
-                                        info(html,data.answer.hintDisplayTime);
+                                        info2(html,data.answer.hintDisplayTime);
                                     }
                                 }
                             }
@@ -474,53 +477,96 @@ function WorldMapXBlock(runtime, element) {
 
 }
 
+//
+//function info(msgHtml, duration) {
+//      if( duration == undefined ) duration = 2500;
+//      jNotify(
+//		msgHtml + (duration < 0?'<br/><center><i>Click window to dismiss</i></center>':''),  //TODO: I18n
+//		{
+//		  autoHide : duration>0, // added in v2.0
+//		  clickOverlay : false, // added in v2.0
+//		  MinWidth : 250,
+//		  TimeShown : duration,
+//		  ShowTimeEffect : 200,
+//		  HideTimeEffect : 200,
+//		  LongTrip :20,
+//		  HorizontalPosition : 'center',
+//		  VerticalPosition : 'top',
+//		  ShowOverlay : true,
+//          closeLabel: "&times;",
+//   		  ColorOverlay : '#000',
+//		  OpacityOverlay : 0.3,
+//		  onClosed : function(){ // added in v2.0
+//
+//		  },
+//		  onCompleted : function(){ // added in v2.0
+//
+//		  }
+//		});
+//}
 
-function info(msgHtml, duration) {
-      if( duration == undefined ) duration = 2500;
-      jNotify(
-		msgHtml + (duration < 0?"<br/><center><i>Click window to dismiss</i></center>":""),  //TODO: I18n
-		{
-		  autoHide : duration>0, // added in v2.0
-		  clickOverlay : false, // added in v2.0
-		  MinWidth : 250,
-		  TimeShown : duration,
-		  ShowTimeEffect : 200,
-		  HideTimeEffect : 200,
-		  LongTrip :20,
-		  HorizontalPosition : 'center',
-		  VerticalPosition : 'top',
-		  ShowOverlay : true,
-   		  ColorOverlay : '#000',
-		  OpacityOverlay : 0.3,
-		  onClosed : function(){ // added in v2.0
-
-		  },
-		  onCompleted : function(){ // added in v2.0
-
-		  }
-		});
+function info2(msgHtml, duration) {
+    if( duration == undefined ) duration = 5000;
+    if( document.getElementById("dialog") == undefined ) {
+        $("body").append($('<div/>', {id: 'dialog'}));
+    }
+    try {
+        $('#dialog').prop("title","Info").html(msgHtml).dialog({
+            modal: false,
+            title: "Info:",
+            position: ['center', 'middle'],
+            show: 'blind',
+            hide: 'blind',
+            dialogClass: 'ui-dialog-osx'
+        });
+        if( duration > 0 ) {
+            window.setTimeout( function() {
+                $('#dialog').dialog("close");
+            }, duration);
+        }
+    } catch (e) {
+        console.log("exception: "+e);
+    }
 }
+//function error(msgHtml) {
+//      jError(
+//		msgHtml,
+//		{
+//		  autoHide : false, // added in v2.0
+//		  clickOverlay : true, // added in v2.0
+//		  MinWidth : 250,
+//		  ShowTimeEffect : 200,
+//		  HideTimeEffect : 200,
+//		  LongTrip :20,
+//		  HorizontalPosition : 'center',
+//		  VerticalPosition : 'top',
+//		  ShowOverlay : true,
+//   		  ColorOverlay : '#000',
+//		  OpacityOverlay : 0.3,
+//          CloseLabel: "&times;",
+//          onClosed : function(){ // added in v2.0
+//
+//		  },
+//		  onCompleted : function(){ // added in v2.0
+//
+//		  }
+//		});
+//}
 
-function error(msgHtml) {
-      jError(
-		msgHtml,
-		{
-		  autoHide : false, // added in v2.0
-		  clickOverlay : true, // added in v2.0
-		  MinWidth : 250,
-		  ShowTimeEffect : 200,
-		  HideTimeEffect : 200,
-		  LongTrip :20,
-		  HorizontalPosition : 'center',
-		  VerticalPosition : 'top',
-		  ShowOverlay : true,
-   		  ColorOverlay : '#000',
-		  OpacityOverlay : 0.3,
-		  onClosed : function(){ // added in v2.0
-
-		  },
-		  onCompleted : function(){ // added in v2.0
-
-		  }
-		});
+function error2(msgHtml) {
+    if( document.getElementById("dialog") == undefined ) {
+        $("body").append($('<div/>', {id: 'dialog'}));
+    }
+    try {
+    $('#dialog').html(msgHtml).dialog({
+        modal: true,
+        title: "Error!",
+        position: ['center', 'middle'],
+        show: 'blind',
+        hide: 'blind',
+        dialogClass: 'ui-dialog-osx'
+    });
+    } catch (e) {
+        console.log("exception: "+e);
+    }
 }

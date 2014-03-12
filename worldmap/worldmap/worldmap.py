@@ -14,6 +14,7 @@ from lxml import etree
 from shapely.geometry.polygon import Polygon
 from shapely.geometry.point import Point
 from shapely.geos import TopologicalError
+from django.utils.translation import ugettext as _
 
 
 log = logging.getLogger(__name__)
@@ -204,13 +205,15 @@ class WorldMapXBlock(XBlock):
 
         isHit = True
         try:
+
             for constraint in data['answer']['constraints']:
+                constraintSatisfied = True
+
                 if( constraint['type'] == 'matches'):
 
                     constraintPolygon = makePolygon(constraint['geometry']['points'])
                     percentMatch = constraint['percentMatch']
-
-                    isHit = isHit and (answerPolygon.difference(constraintPolygon).area*100/constraintPolygon.area < (100-percentMatch)) \
+                    constraintSatisfied = (answerPolygon.difference(constraintPolygon).area*100/constraintPolygon.area < (100-percentMatch)) \
                           and (answerPolygon.difference(constraintPolygon).area*100/answerPolygon.area < (100-percentMatch)) \
                           and (constraintPolygon.difference(answerPolygon).area*100/constraintPolygon.area < (100-percentMatch))
 
@@ -219,23 +222,25 @@ class WorldMapXBlock(XBlock):
                         constraintPolygon = makePolygon(constraint['geometry']['points'])
 
                         if( constraint['type'] == 'includes' ):
-                            isHit = isHit and (constraintPolygon.difference(answerPolygon)).area == 0.0
+                            constraintSatisfied = answerPolygon.contains(constraintPolygon)
                         else:
-                            isHit = isHit and constraintPolygon.disjoint(answerPolygon)
+                            constraintSatisfied = constraintPolygon.disjoint(answerPolygon)
                     elif( constraint['geometry']['type'] == 'point' ):
                         if( constraint['type'] == 'includes' ):
-                            isHit = isHit and answerPolygon.contains(makePoint(constraint['geometry']))
+                            constraintSatisfied = answerPolygon.contains(makePoint(constraint['geometry']))
                         else:
-                            isHit = isHit and answerPolygon.disjoint(makePoint(constraint['geometry']))
+                            constraintSatisfied = answerPolygon.disjoint(makePoint(constraint['geometry']))
+                isHit = isHit and constraintSatisfied
+                constraint['satisfied'] = constraintSatisfied
 
         except TopologicalError:
             return {
                 'answer':data['answer'],
                 'isHit': False,
-                'error': 'Invalid polygon topology<br/><img src="http://robertlight.com/tmp/InvalidTopology.png"/>'
+                'error': _('Invalid polygon topology')+'<br/><img src="http://robertlight.com/tmp/InvalidTopology.png"/>'  #TODO: fix url
             }
         except:
-            print "Unexpected error: ", sys.exc_info()[0]
+            print _("Unexpected error: "), sys.exc_info()[0]
 
         return {
             'answer':data['answer'],
@@ -329,10 +334,7 @@ class WorldMapXBlock(XBlock):
             self.centerLat = data.get('centerLat')
             self.centerLon = data.get('centerLon')
             self.zoomLevel = data.get('zoomLevel')
-            try:
-                print "center=(",self.centerLat,",",self.centerLon,")  zoom=",self.zoomLevel;
-            except:
-                print "Error: ", sys.exc_info()[0]
+
         return True
 
 
@@ -519,102 +521,102 @@ class WorldMapXBlock(XBlock):
                     </sliders>
                 </worldmap>
               </worldmap-quiz>
-            </vertical_demo>
               """
-             #   <worldmap-quiz padding='10'>
-             #       <worldmap name='worldmap' href='http://worldmap.harvard.edu/maps/chinaX/embed?' width='800' height='600' opacityControls='true' testLatitude='16.775800549402906' testLongitude='-3.0166396836062104' testRadius='10000' debug="true">
-             #          <layers>
-             #             <layer id="OpenLayers_Layer_WMS_276">
-             #                <param name="EastAsiaTribes" min="449" max="545"/>
-             #             </layer>
-             #             <layer id="OpenLayers_Layer_WMS_274">
-             #                <param name="EastAsiaTribes" min="546" max="571"/>
-             #             </layer>
-             #             <layer id="OpenLayers_Layer_WMS_320">
-             #                <param name="EastAsiaTribes" min="73" max="261"/>
-             #             </layer>
-             #             <layer id="OpenLayers_Layer_WMS_324">
-             #                <param name="EastAsiaTribes" min="-82" max="72"/>
-             #             </layer>
-             #             <layer id="OpenLayers_Layer_WMS_294">
-             #                <param name="EastAsiaTribes" min="262" max="280"/>
-             #             </layer>
-             #             <layer id="OpenLayers_Layer_WMS_292">
-             #                <param name="EastAsiaTribes" min="281" max="326"/>
-             #             </layer>
-             #             <layer id="OpenLayers_Layer_WMS_288">
-             #                <param name="EastAsiaTribes" min="327" max="448"/>
-             #             </layer>
-             #             <layer id="OpenLayers_Layer_WMS_272">
-             #                <param name="EastAsiaTribes" value="572"/>
-             #             </layer>
-             #
-             #             <layer id="OpenLayers_Layer_WMS_248">
-             #                <param name="YellowRiver" min="-602" max="11"/>
-             #             </layer>
-             #             <layer id="OpenLayers_Layer_WMS_246">
-             #                <param name="YellowRiver" min="12" max="1048"/>
-             #             </layer>
-             #             <layer id="OpenLayers_Layer_WMS_244">
-             #                <param name="YellowRiver" min="1049" max="1128"/>
-             #             </layer>
-             #             <layer id="OpenLayers_Layer_WMS_242">
-             #                <param name="YellowRiver" min="1129" max="1368"/>
-             #             </layer>
-             #             <layer id="OpenLayers_Layer_WMS_240">
-             #                <param name="YellowRiver" min="1369" max="1855"/>
-             #             </layer>
-             #          </layers>
-             #          <sliders>
-             #             <slider id="YellowRiver" title="Yellow River" param="YellowRiver" min="-602" max="1855" incr="10" position="bottom">
-             #                <help>
-             #                   <b>Yellow River diversions</b><br/>
-             #                   From 602BCE through 1855CE
-             #                </help>
-             #             </slider>
-             #          </sliders>
-             #          <group-control name="ChinaX layers">
-             #             <group-control name="geography">
-             #               <layer-control layerid="OpenLayers_Layer_WMS_332" name="Coastline1"/>
-             #               <layer-control layerid="OpenLayers_Layer_WMS_330" name="Yellow River"/>
-             #               <layer-control layerid="OpenLayers_Layer_WMS_232" name="Major Rivers"/>
-             #               <layer-control layerid="OpenLayers_Layer_WMS_246" name="Yellow River 1048CE-1128CE"/>
-             #               <layer-control layerid="OpenLayers_Layer_WMS_114" name="Expedition Route"/>
-             #             </group-control>
-             #          </group-control>
-             #       </worldmap>
-             #       <explanation>
-             #            <B>How well do you know the history of the Yellow River?</B>
-             #       </explanation>
-             #       <answer id='foobar' color='00FF00' type='point'>
-             #          <explanation>
-             #             Use the tool button below and show where the diversion point for the alteration in the Yellow River circa 1855
-             #          </explanation>
-             #          <constraints>
-             #             <matches percentOfGrade="25" percentAnswerInsidePaddedGeometry="100" percentGeometryInsidePaddedAnswer="100">
-             #                 <point lat="113.523" lon="34.97248"/>
-             #                 <explanation>
-             #                    <B> The diversion point was just northwest of Zhengzhou </B>
-             #                 </explanation>
-             #             </matches>
-             #          </constraints>
-             #       </answer>
-             #       <answer id='baz' color='0000FF' type='point'>
-             #          <explanation>
-             #             Where is Hong Kong?
-             #          </explanation>
-             #          <constraints>
-             #             <matches percentOfGrade="25" percentAnswerInsidePaddedGeometry="100" percentGeometryInsidePaddedAnswer="100">
-             #                 <point lat="114.21516592567018" lon="22.346155606846434"/>
-             #                 <explanation>
-             #                    <B> Hong Kong is on the coast north east of Macau </B>
-             #                 </explanation>
-             #             </matches>
-             #          </constraints>
-             #       </answer>
-             #   </worldmap-quiz>
-             #</vertical_demo>
-             #"""
+              #<worldmap-quiz padding='10'>
+              #    <worldmap name='worldmap' href='http://worldmap.harvard.edu/maps/chinaX/embed?' width='800' height='600' opacityControls='true' testLatitude='16.775800549402906' testLongitude='-3.0166396836062104' testRadius='10000' debug="true">
+              #       <layers>
+              #          <layer id="OpenLayers_Layer_WMS_276">
+              #             <param name="EastAsiaTribes" min="449" max="545"/>
+              #          </layer>
+              #          <layer id="OpenLayers_Layer_WMS_274">
+              #             <param name="EastAsiaTribes" min="546" max="571"/>
+              #          </layer>
+              #          <layer id="OpenLayers_Layer_WMS_320">
+              #             <param name="EastAsiaTribes" min="73" max="261"/>
+              #          </layer>
+              #          <layer id="OpenLayers_Layer_WMS_324">
+              #             <param name="EastAsiaTribes" min="-82" max="72"/>
+              #          </layer>
+              #          <layer id="OpenLayers_Layer_WMS_294">
+              #             <param name="EastAsiaTribes" min="262" max="280"/>
+              #          </layer>
+              #          <layer id="OpenLayers_Layer_WMS_292">
+              #             <param name="EastAsiaTribes" min="281" max="326"/>
+              #          </layer>
+              #          <layer id="OpenLayers_Layer_WMS_288">
+              #             <param name="EastAsiaTribes" min="327" max="448"/>
+              #          </layer>
+              #          <layer id="OpenLayers_Layer_WMS_272">
+              #             <param name="EastAsiaTribes" value="572"/>
+              #          </layer>
+              #
+              #          <layer id="OpenLayers_Layer_WMS_248">
+              #             <param name="YellowRiver" min="-602" max="11"/>
+              #          </layer>
+              #          <layer id="OpenLayers_Layer_WMS_246">
+              #             <param name="YellowRiver" min="12" max="1048"/>
+              #          </layer>
+              #          <layer id="OpenLayers_Layer_WMS_244">
+              #             <param name="YellowRiver" min="1049" max="1128"/>
+              #          </layer>
+              #          <layer id="OpenLayers_Layer_WMS_242">
+              #             <param name="YellowRiver" min="1129" max="1368"/>
+              #          </layer>
+              #          <layer id="OpenLayers_Layer_WMS_240">
+              #             <param name="YellowRiver" min="1369" max="1855"/>
+              #          </layer>
+              #       </layers>
+              #       <sliders>
+              #          <slider id="YellowRiver" title="Yellow River" param="YellowRiver" min="-602" max="1855" incr="10" position="bottom">
+              #             <help>
+              #                <b>Yellow River diversions</b><br/>
+              #                From 602BCE through 1855CE
+              #             </help>
+              #          </slider>
+              #       </sliders>
+              #       <group-control name="ChinaX layers">
+              #          <group-control name="geography">
+              #            <layer-control layerid="OpenLayers_Layer_WMS_332" name="Coastline1"/>
+              #            <layer-control layerid="OpenLayers_Layer_WMS_330" name="Yellow River"/>
+              #            <layer-control layerid="OpenLayers_Layer_WMS_232" name="Major Rivers"/>
+              #            <layer-control layerid="OpenLayers_Layer_WMS_246" name="Yellow River 1048CE-1128CE"/>
+              #            <layer-control layerid="OpenLayers_Layer_WMS_114" name="Expedition Route"/>
+              #          </group-control>
+              #       </group-control>
+              #    </worldmap>
+              #    <explanation>
+              #         <B>How well do you know the history of the Yellow River?</B>
+              #    </explanation>
+              #    <answer id='foobar' color='00FF00' type='point'>
+              #       <explanation>
+              #          Use the tool button below and show where the diversion point for the alteration in the Yellow River circa 1855
+              #       </explanation>
+              #       <constraints>
+              #          <matches percentOfGrade="25" percentAnswerInsidePaddedGeometry="100" percentGeometryInsidePaddedAnswer="100">
+              #              <point lat="113.523" lon="34.97248"/>
+              #              <explanation>
+              #                 <B> The diversion point was just northwest of Zhengzhou </B>
+              #              </explanation>
+              #          </matches>
+              #       </constraints>
+              #    </answer>
+              #    <answer id='baz' color='0000FF' type='point'>
+              #       <explanation>
+              #          Where is Hong Kong?
+              #       </explanation>
+              #       <constraints>
+              #          <matches percentOfGrade="25" percentAnswerInsidePaddedGeometry="100" percentGeometryInsidePaddedAnswer="100">
+              #              <point lat="114.21516592567018" lon="22.346155606846434"/>
+              #              <explanation>
+              #                 <B> Hong Kong is on the coast north east of Macau </B>
+              #              </explanation>
+              #          </matches>
+              #       </constraints>
+              #    </answer>
+              #</worldmap-quiz>
+             + """
+             </vertical_demo>
+             """
             ),
         ]
 
