@@ -244,27 +244,31 @@ function WorldMapXBlock(runtime, element) {
                 }, true);
             }
         });
-//        tree.visit(function(node){
-//             node.expand(false);
-//        });
 
-        MESSAGING.getInstance().addHandler(getUniqueId(),"point-response", function(m) {
-            var data = JSON.parse(JSON.parse(m.message));
-            $.ajax({
-                type: "POST",
-                url: runtime.handlerUrl(element, 'point_response'),
-                data: JSON.stringify(data),
-                success: function(result) {
-                    if( !result ) {
-                        console.log("Failed to test point-response for map: "+$('.frame', el).attr('id'));
-                    } else {  //TODO: Fix url to point to local image
-                        var div = $('#score-'+result.answer.id);
-                        if( result.isHit ) {
-                            div.html("<img src='/resource/equality_demo/public/images/correct-icon.png'/>");
-                            MESSAGING.getInstance().sendAll( new Message("reset-answer-tool",null));
-                            info2("Correct!", 1000);
+        MESSAGING.getInstance().addHandler(getUniqueId(),"point_response", responseHandler );
+        MESSAGING.getInstance().addHandler(getUniqueId(),"polygon_response", responseHandler);
+    });
+
+    function responseHandler(m) {
+        var data = JSON.parse(JSON.parse(m.message));
+        $.ajax({
+            type: "POST",
+            url: runtime.handlerUrl(element, m.type),
+            data: JSON.stringify(data),
+            success: function(result) {
+                if( !result ) {
+                    console.log("Failed to test "+ m.type+" for map: "+$('.frame', el).attr('id'));
+                } else {  //TODO: Fix url to point to local image
+                    var div = $('#score-'+result.answer.id);
+                    if( result.isHit ) {
+                        div.html("<img src='/resource/equality_demo/public/images/correct-icon.png'/>");
+                        MESSAGING.getInstance().sendAll( new Message("reset-answer-tool",null));
+                        info("Correct!", 1000);
+                    } else {
+                        div.html("<img src='/resource/equality_demo/public/images/incorrect-icon.png'/>");
+                        if( result.error != null ) {
+                            error(result.error);
                         } else {
-                            div.html("<img src='/resource/equality_demo/public/images/incorrect-icon.png'/>");
                             var nAttempt = div.attr("nAttempts");
                             if( nAttempt == undefined ) nAttempt = 0;
                             nAttempt++;
@@ -274,70 +278,21 @@ function WorldMapXBlock(runtime, element) {
                                 if( nAttempt % hintAfterAttempt == 0) {
                                     var html = "<ul>";
                                     for( var i=0;i<result.answer.constraints.length; i++) {
-                                        html += "<li>"+result.answer.constraints[i].explanation+"</li>";
+                                        var constraint = result.answer.constraints[i];
+                                        if( !constraint.satisfied ) {
+                                            html += "<li>"+constraint.explanation+"</li>";
+                                        }
                                     }
                                     html += "</ul>";
-                                    info2(html);
+                                    info(html,result.answer.hintDisplayTime);
                                 }
                             }
                         }
-
                     }
                 }
-            });
-        })
-
-        MESSAGING.getInstance().addHandler(getUniqueId(),"polygon-response", function(m) {
-            var data = JSON.parse(JSON.parse(m.message));
-
-            $.ajax({
-                type: "POST",
-                url: runtime.handlerUrl(element, 'polygon_response'),
-                data: JSON.stringify(data),
-                success: function(result) {
-                    if( !result ) {
-                        console.log("Failed to test point-response for map: "+$('.frame', el).attr('id'));
-                    } else {  //TODO: Fix url to point to local image
-                        var div = $('#score-'+result.answer.id);
-                        if( result.isHit ) {
-                            div.html("<img src='/resource/equality_demo/public/images/correct-icon.png'/>");
-                            MESSAGING.getInstance().sendAll( new Message("reset-answer-tool",null));
-                            info2("Correct!", 1000);
-                        } else {
-                            div.html("<img src='/resource/equality_demo/public/images/incorrect-icon.png'/>");
-                            var nAttempt = div.attr("nAttempts");
-                            if( nAttempt == undefined ) nAttempt = 0;
-                            nAttempt++;
-                            div.attr("nAttempts",nAttempt);
-
-                            if( result.error != null ) {
-                                error2("<B>Error</B> "+result.error);
-                            } else {
-                                var hintAfterAttempt = result.answer.hintAfterAttempt;
-                                if( hintAfterAttempt != null ) {
-                                    if( nAttempt % hintAfterAttempt == 0) {
-                                        var html = "<ul>";
-                                        for( var i=0;i<result.answer.constraints.length; i++) {
-                                            var constraint = result.answer.constraints[i];
-                                            if( !constraint.satisfied ) {
-                                                html += "<li>"+constraint.explanation+"</li>";
-                                            }
-                                        }
-                                        html += "</ul>";
-                                        info2(html,data.answer.hintDisplayTime);
-                                    }
-                                }
-                            }
-                        }
-
-                    }
-                }
-            });
-        })
-
-
-
-    });
+            }
+        });
+    }
 
     var layerVisibilityCache = [];
     function selectLayer(select,layerid) {
@@ -354,6 +309,7 @@ function WorldMapXBlock(runtime, element) {
             layerVisibilityCache[uniqId+layerid] = select;
         }
     }
+
     function getUniqueId() {
         return $('.frame', element).attr('id');
     }
@@ -466,46 +422,15 @@ function WorldMapXBlock(runtime, element) {
         });
     }
 
-
     $(function ($) {
         console.log("initialize on page load");
   //      $(document).tooltip();
         /* Here's where you'd do things on page load. */
     });
-
-
-
 }
 
-//
-//function info(msgHtml, duration) {
-//      if( duration == undefined ) duration = 2500;
-//      jNotify(
-//		msgHtml + (duration < 0?'<br/><center><i>Click window to dismiss</i></center>':''),  //TODO: I18n
-//		{
-//		  autoHide : duration>0, // added in v2.0
-//		  clickOverlay : false, // added in v2.0
-//		  MinWidth : 250,
-//		  TimeShown : duration,
-//		  ShowTimeEffect : 200,
-//		  HideTimeEffect : 200,
-//		  LongTrip :20,
-//		  HorizontalPosition : 'center',
-//		  VerticalPosition : 'top',
-//		  ShowOverlay : true,
-//          closeLabel: "&times;",
-//   		  ColorOverlay : '#000',
-//		  OpacityOverlay : 0.3,
-//		  onClosed : function(){ // added in v2.0
-//
-//		  },
-//		  onCompleted : function(){ // added in v2.0
-//
-//		  }
-//		});
-//}
 
-function info2(msgHtml, duration) {
+function info(msgHtml, duration) {
     if( duration == undefined ) duration = 5000;
     if( document.getElementById("dialog") == undefined ) {
         $("body").append($('<div/>', {id: 'dialog'}));
@@ -525,35 +450,11 @@ function info2(msgHtml, duration) {
             }, duration);
         }
     } catch (e) {
-        console.log("exception: "+e);
+        console.log("exception: "+e+"\n"+ e.stack);
     }
 }
-//function error(msgHtml) {
-//      jError(
-//		msgHtml,
-//		{
-//		  autoHide : false, // added in v2.0
-//		  clickOverlay : true, // added in v2.0
-//		  MinWidth : 250,
-//		  ShowTimeEffect : 200,
-//		  HideTimeEffect : 200,
-//		  LongTrip :20,
-//		  HorizontalPosition : 'center',
-//		  VerticalPosition : 'top',
-//		  ShowOverlay : true,
-//   		  ColorOverlay : '#000',
-//		  OpacityOverlay : 0.3,
-//          CloseLabel: "&times;",
-//          onClosed : function(){ // added in v2.0
-//
-//		  },
-//		  onCompleted : function(){ // added in v2.0
-//
-//		  }
-//		});
-//}
 
-function error2(msgHtml) {
+function error(msgHtml) {
     if( document.getElementById("dialog") == undefined ) {
         $("body").append($('<div/>', {id: 'dialog'}));
     }

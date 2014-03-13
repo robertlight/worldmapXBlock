@@ -467,7 +467,7 @@ class WorldMapXBlock(XBlock):
                       </layer>
                    </layers>
                    <group-control name="Census Data" visible="true">
-                      <layer-control layerid="OpenLayers_Layer_WMS_306" visible="true" name="7 Capitals of the Shang Dynasty"/>
+                      <layer-control layerid="OpenLayers_Layer_WMS_120" visible="true" name="layer0"/>
                       <layer-control layerid="OpenLayers_Layer_WMS_122" visible="true" name="layerA"/>
                       <layer-control layerid="OpenLayers_Layer_WMS_124" visible="true" name="layerB"/>
                       <layer-control layerid="OpenLayers_Layer_WMS_120" visible="false" name="layerC"/>

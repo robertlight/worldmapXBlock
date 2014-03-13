@@ -67,7 +67,7 @@ var CLICK_CONTROL = OpenLayers.Class(OpenLayers.Control, {
         markerLayer.addMarker(markers[currentAnswer.id]);
 
         MESSAGING.getInstance().send(
-            new Message("point-response",
+            new Message("point_response",
                 {
                     point: {lat:point.x, lon:point.y},
                     answer: currentAnswer
@@ -174,7 +174,7 @@ Ext.onReady(function() {
                        }
 
                        MESSAGING.getInstance().send(
-                           new Message("polygon-response",
+                           new Message("polygon_response",
                                {
                                    polygon: polygon,
                                    answer: currentAnswer
