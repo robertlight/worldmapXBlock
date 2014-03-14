@@ -1,5 +1,5 @@
 
-<worldmap href="blah" opacityControls="true/false">
+<worldmap href="blah" >
     <layers>
         <layer id="..." >  <!-- zero or more layer tags -->
             <param name="..." value="...."  |  min="..." max="..." />   <!-- value or min & max but not both -->

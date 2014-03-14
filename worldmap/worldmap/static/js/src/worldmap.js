@@ -206,7 +206,6 @@ function WorldMapXBlock(runtime, element) {
              }
         });
 
-
         //****************** LAYER CONTROLS ***************************
         $('.layerControls',element).dynatree({
             title: "LayerControls",
@@ -242,6 +241,19 @@ function WorldMapXBlock(runtime, element) {
                         selectLayer(select, n.data.key);
                     }
                 }, true);
+            },
+            onPostInit: function() {
+                //need to update layer visibility based on state stored serverside
+                $.ajax({
+                   type: "POST",
+                   url:  runtime.handlerUrl(element,"getLayerStates"),
+                   data: "null",
+                   success: function(result) {
+                       for (var id in result) {
+                           selectLayer(result[id]['visibility'], id);
+                       }
+                   }
+                });
             }
         });
 
@@ -370,46 +382,6 @@ function WorldMapXBlock(runtime, element) {
             }
         }
 
-        var useOpacityControls = $('.frame', element).attr('opacityControls');
-        if( useOpacityControls && useOpacityControls.toLowerCase() == 'true' ) {
-            var id = "layerOpacityCtrl_"+layer.id.replace((/[\. ]/g),'_');
-            if( $('#'+id,el).length == 0 && layer.visibility ) {
-                var ctrl = document.createElement("div");  //$(".opacityControl-"+id, el);
-
-                $(ctrl).attr("id",id).slider({
-                    value: layer.opacity,
-                    min: 0,
-                    max: 1,
-                    step: .01,
-                    animate: "fast",
-                    slide: function(event, ui) {
-                        layer.opacity = ui.value;
-                        var newJson = JSON.stringify(layer);
-                        console.log('slide handler: ui='+ui.value+"  for element: "+getUniqueId());
-
-//                        MESSAGING.getInstance().send(
-//                            getUniqueId(),
-//                            new Message("setLayers", JSON.stringify(JSON.parse("{\""+layer.id+"\":"+JSON.stringify(layer)+"}")))
-//                        );
-                        $.ajax({
-                            type: "POST",
-                            url: runtime.handlerUrl(el, 'change_layer_properties'),
-                            data: newJson,
-                            success: function(result) {
-                                if( !result ) {
-                                    console.log("Failed to change layer for map: "+$('.frame', el).attr('id'));
-                                }
-                            }
-                        });
-                    }
-                }).draggable(); //use touch-punch hack for touch screen compatibility
-
-                ctrl.appendTo($('#layerControl-'+layer.id.replace((/[\. ]/g),'_')));
-            } else if( !layer.visibility && $('#'+id,el).length > 0 ) {
-              //  console.log("Removing control for id: "+layer.id);
-                $('#'+id,el).remove();
-            }
-        }
         $.ajax({
             type: "POST",
             url: runtime.handlerUrl(el, 'change_layer_properties'),

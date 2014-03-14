@@ -56,10 +56,11 @@ class WorldMapXBlock(XBlock):
     testLongitude= Float(help="longitude of test location point", default=None)
     testRadius   = Float(help="acceptable hit radius (meters)",default=10000)
 
-    opacityControls = Boolean(help="include opacity control sliders", default=True, scope=Scope.content)
     zoomLevel = Integer(help="zoom level of map", default=None, scope=Scope.user_state)
     centerLat = Float(help="center of map (latitude)", default=None, scope=Scope.user_state)
     centerLon = Float(help="center of map (longitude)", default=None, scope=Scope.user_state)
+
+    layerState= Dict(help="dictionary of layer states, layer name is key", default={}, scope=Scope.user_state)
 
     has_children = True
 
@@ -176,6 +177,10 @@ class WorldMapXBlock(XBlock):
                    'params':  params
                 })
         return result
+
+    @XBlock.json_handler
+    def getLayerStates(self, data, suffix=''):
+        return self.layerState
 
     @XBlock.json_handler
     def point_response(self, data, suffix=''):
@@ -300,11 +305,10 @@ class WorldMapXBlock(XBlock):
             return False
         else:
             # we have a threading problem... need to behave in single-threaded mode here
-            #self.threadLock.acquire()
-            #if self.layers == None:
-            #    self.layers = {}
-            #self.layers[id] = {'name': data.get("name"),  'opacity': data.get("opacity"), 'visibility': data.get("visibility")}
-            #self.threadLock.release()
+            self.threadLock.acquire()
+            self.layerState[id] = { 'name':data.get('name'), 'opacity':data.get('opacity'), 'visibility':data.get('visibility')}
+            self.threadLock.release()
+
             pass
         return True
 
@@ -338,8 +342,8 @@ class WorldMapXBlock(XBlock):
         return True
 
 
-    #<worldmap href='http://23.21.172.243/maps/bostoncensus/embed?' opacityControls='false' baseLayer='OpenLayers_Layer_Bing_92'>
-    #<worldmap href='https://worldmap.harvard.edu/maps/chinaX/embed?' opacityControls='false' baseLayer='OpenLayers_Layer_Bing_92'>
+    #<worldmap href='http://23.21.172.243/maps/bostoncensus/embed?'   baseLayer='OpenLayers_Layer_Bing_92'>
+    #<worldmap href='https://worldmap.harvard.edu/maps/chinaX/embed?' baseLayer='OpenLayers_Layer_Bing_92'>
     # TO-DO: change this to create the scenarios you'd like to see in the
     # workbench while developing your XBlock.
     @staticmethod
@@ -447,7 +451,7 @@ class WorldMapXBlock(XBlock):
                        </constraints>
                     </answer>
 
-                <worldmap href='http://23.21.172.243/maps/bostoncensus/embed?' debug='true' width='600' height='400' opacityControls='false' baseLayer='OpenLayers_Layer_Google_116'>
+                <worldmap href='http://23.21.172.243/maps/bostoncensus/embed?' debug='true' width='600' height='400' baseLayer='OpenLayers_Layer_Google_116'>
                    <layers>
                       <layer id="geonode:qing_charity_v1_mzg"/>
                       <layer id="OpenLayers_Layer_WMS_122">
@@ -523,7 +527,7 @@ class WorldMapXBlock(XBlock):
               </worldmap-quiz>
               """
               #<worldmap-quiz padding='10'>
-              #    <worldmap name='worldmap' href='http://worldmap.harvard.edu/maps/chinaX/embed?' width='800' height='600' opacityControls='true' testLatitude='16.775800549402906' testLongitude='-3.0166396836062104' testRadius='10000' debug="true">
+              #    <worldmap name='worldmap' href='http://worldmap.harvard.edu/maps/chinaX/embed?' width='800' height='600' testLatitude='16.775800549402906' testLongitude='-3.0166396836062104' testRadius='10000' debug="true">
               #       <layers>
               #          <layer id="OpenLayers_Layer_WMS_276">
               #             <param name="EastAsiaTribes" min="449" max="545"/>
