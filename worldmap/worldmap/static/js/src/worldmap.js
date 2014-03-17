@@ -243,7 +243,7 @@ function WorldMapXBlock(runtime, element) {
                 }, true);
             },
             onPostInit: function() {
-                //need to update layer visibility based on state stored serverside
+                //now that the control is created, we need to update layer visibility based on state stored serverside
                 $.ajax({
                    type: "POST",
                    url:  runtime.handlerUrl(element,"getLayerStates"),
