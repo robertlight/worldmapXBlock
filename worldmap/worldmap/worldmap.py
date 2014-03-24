@@ -15,7 +15,9 @@ from shapely.geometry.polygon import Polygon
 from shapely.geometry.point import Point
 from shapely.geos import TopologicalError
 from django.utils.translation import ugettext as _
-
+from shapely import affinity
+from shapely import ops
+from random import randrange
 
 log = logging.getLogger(__name__)
 
@@ -51,10 +53,6 @@ class WorldMapXBlock(XBlock):
     width= Integer(help="width of map", default=750)
     height=Integer(help="height of map", default=550)
     debug =Boolean(help="enable the debug pane", default=False)
-
-    testLatitude = Float(help="latitude of test location point", default=None)
-    testLongitude= Float(help="longitude of test location point", default=None)
-    testRadius   = Float(help="acceptable hit radius (meters)",default=10000)
 
     zoomLevel = Integer(help="zoom level of map", default=None, scope=Scope.user_state)
     centerLat = Float(help="center of map (latitude)", default=None, scope=Scope.user_state)
@@ -273,6 +271,52 @@ class WorldMapXBlock(XBlock):
         return None
 
     @XBlock.json_handler
+    def getFuzzyGeometry(self, data, suffix=''):
+        buffer = data['buffer']*180./(self.SPHERICAL_DEFAULT_RADIUS*math.pi)
+
+        # create a bunch of polygons that are more/less the shape of our original geometry
+        geometryArr = []
+        if( data['type'] == 'point'):
+            point = Point(data['geometry']['lon']+360., data['geometry']['lat'])
+            geometryArr.append( point.buffer(buffer))
+            geometryArr.append( point.buffer(buffer*2))
+            geometryArr.append( point.buffer(buffer*4))
+            geometryArr.append( point.buffer(buffer*8))
+        elif( data['type'] == 'polygon'):
+            arr = []
+            for pt in data['geometry']:
+                arr.append((pt['lon']+360., pt['lat']))
+            polygon = Polygon(arr)
+            geometryArr.append( polygon.buffer(buffer*1.5))
+            geometryArr.append( polygon.buffer(buffer*.5 ))
+            geometryArr.append( polygon.buffer(2*buffer).buffer(-2*buffer) )
+            geometryArr.append( polygon.buffer(-buffer))
+
+        # move these polygons around a bit randomly
+        r = []
+        for g in geometryArr:
+            arr = []
+            for i in range(0,4):   # give it a blobby look
+                arr.append(affinity.translate(g, 4*buffer*randrange(-500,500)/1000., 4*buffer*randrange(-500,500)/1000.,0))
+            # union these randomly moved polygons back together and get their convex_hull
+            hull = ops.unary_union(arr).convex_hull
+            for i in range(0,10):
+                r.append( affinity.translate(hull, 4*buffer*randrange(-500,500)/1000., 4*buffer*randrange(-500,500)/1000.,0))
+
+        # output the polygons
+        result = []
+        for polygon in r:
+            poly = []
+            if( not polygon.is_empty ):
+                for pt in polygon.exterior.coords:
+                    poly.append( { 'lon': pt[0]-360., 'lat': pt[1]} )
+                result.append(poly)
+
+        return result
+
+
+
+    @XBlock.json_handler
     def layerTree(self, data, suffix=''):
         """
         Called to get layer tree for a particular map
@@ -342,8 +386,6 @@ class WorldMapXBlock(XBlock):
         return True
 
 
-    #<worldmap href='http://23.21.172.243/maps/bostoncensus/embed?'   baseLayer='OpenLayers_Layer_Bing_92'>
-    #<worldmap href='https://worldmap.harvard.edu/maps/chinaX/embed?' baseLayer='OpenLayers_Layer_Bing_92'>
     # TO-DO: change this to create the scenarios you'd like to see in the
     # workbench while developing your XBlock.
     @staticmethod
@@ -353,7 +395,7 @@ class WorldMapXBlock(XBlock):
             ("WorldMapXBlock",
              """
              <vertical_demo>
-               <worldmap-quiz padding='500'>
+               <worldmap-quiz padding='1000'>
                     <explanation>
                          <B>A quiz about the Boston area</B>
                     </explanation>
@@ -363,7 +405,7 @@ class WorldMapXBlock(XBlock):
                        </explanation>
                        <constraints>
                           <matches percentOfGrade="25" percentMatch="100" >
-                              <point lat="-70.9657058456866" lon="42.32011232390349"/>
+                              <point lon="-70.9657058456866" lat="42.32011232390349"/>
                               <explanation>
                                  <B> Look at boston harbor - pick the biggest island </B>
                               </explanation>
@@ -376,7 +418,7 @@ class WorldMapXBlock(XBlock):
                        </explanation>
                        <constraints>
                           <matches percentOfGrade="25" percentMatch="100">
-                              <point lat="-70.93824002537393" lon="42.445896458204764"/>
+                              <point lon="-70.93824002537393" lat="42.445896458204764"/>
                               <explanation>
                                  <B>Hint:</B> Look for Nahant Bay on the map
                               </explanation>
@@ -450,7 +492,28 @@ class WorldMapXBlock(XBlock):
                           </includes>
                        </constraints>
                     </answer>
-
+                    <answer id='esplanade' color='00FF00' type='polygon' hintAfterAttempt='2'>
+                       <explanation>
+                           Draw a polygon around the esplanade
+                       </explanation>
+                       <constraints hintDisplayTime='-1'>
+                          <matches percentMatch='80' percentOfGrade="25" >
+                             <polygon>
+                                <point lon="-71.07466790470745" lat="42.35719537593463"/>
+                                <point lon="-71.08492467197995" lat="42.35399231410341"/>
+                                <point lon="-71.08543965611076" lat="42.35335802506911"/>
+                                <point lon="-71.08822915348655" lat="42.35250172471913"/>
+                                <point lon="-71.08814332279839" lat="42.352279719020736"/>
+                                <point lon="-71.08689877781501" lat="42.35253343975517"/>
+                                <point lon="-71.07411000523211" lat="42.355958569427614"/>
+                                <point lon="-71.07466790470745" lat="42.35719537593463"/>
+                             </polygon>
+                             <explanation>
+                                <B>Must</B> include the esplanade
+                             </explanation>
+                          </matches>
+                       </constraints>
+                    </answer>
                 <worldmap href='http://23.21.172.243/maps/bostoncensus/embed?' debug='true' width='600' height='400' baseLayer='OpenLayers_Layer_Google_116'>
                    <layers>
                       <layer id="geonode:qing_charity_v1_mzg"/>

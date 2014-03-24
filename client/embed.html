@@ -69,7 +69,7 @@ var CLICK_CONTROL = OpenLayers.Class(OpenLayers.Control, {
         MESSAGING.getInstance().send(
             new Message("point_response",
                 {
-                    point: {lat:point.x, lon:point.y},
+                    point: {lon:point.x, lat:point.y},
                     answer: currentAnswer
                 }
             )
@@ -156,8 +156,8 @@ Ext.onReady(function() {
         markerLayer = new OpenLayers.Layer.Markers("worldmap-markers");
         polygonLayer = new OpenLayers.Layer.Vector("worldmap-polygons", {
             styleMap: new OpenLayers.StyleMap({
-                fillColor: "#aaaaaa",
-                fillOpacity: 0.5
+                fillColor: "#ff0000",
+                fillOpacity: 0.3
             })
         });
 
@@ -165,8 +165,6 @@ Ext.onReady(function() {
             new OpenLayers.Control.DrawFeature(polygonLayer, OpenLayers.Handler.Polygon, {
                 callbacks: {
                     done: function(geo) {
-                       // window.alert('done: #points: '+geo.components[0].components.length);
-//                       this.drawFeature(geo);
                        var polygon = [];
                        for( var i=0;i<geo.components[0].components.length; i++) {
                            var point = transformToLonLat({lon: geo.components[0].components[i].x, lat:geo.components[0].components[i].y});
@@ -182,15 +180,18 @@ Ext.onReady(function() {
                            )
                        );
 
-                       var feature = new OpenLayers.Feature.Vector(geo);
-                       var proceed = this.layer.events.triggerEvent( "sketchcomplete", {feature:feature});
+                       var feature = new OpenLayers.Feature.Vector(geo,{},{
+                           fillColor: '#'+currentAnswer.color,
+                           fillOpacity: 0.4
+                       });
+                       var proceed = this.events.triggerEvent( "sketchcomplete", {feature:feature});
                        if( proceed !== false ) {
                           feature.state = OpenLayers.State.INSERT;
                           if( polygons[currentAnswer.id] ) {
-                             this.layer.removeFeatures([polygons[currentAnswer.id]]);
+                             polygonLayer.removeFeatures([polygons[currentAnswer.id]]);
                           }
                           polygons[currentAnswer.id] = feature;
-                          this.layer.addFeatures([feature]);
+                          polygonLayer.addFeatures([feature]);
                           this.featureAdded(feature);
                           this.events.triggerEvent("featureadded",{feature:feature});
                        }
@@ -219,7 +220,7 @@ Ext.onReady(function() {
         MESSAGING.getInstance().registerHandler("setZoomLevel", function(m) { app.mapPanel.map.zoomTo(m.getMessage()); });
         MESSAGING.getInstance().registerHandler("setCenter",function(m) {
             var data = m.getMessage();
-            Ext.example.msg("Info","setCenter: "+data.centerLat+","+data.centerLon+"   zoom="+data.zoomLevel);
+            //Ext.example.msg("Info","setCenter: "+data.centerLat+","+data.centerLon+"   zoom="+data.zoomLevel);
             var pt = transformToXY({lon:data.centerLon,lat:data.centerLat});
             app.mapPanel.map.setCenter([pt.x, pt.y],data.zoomLevel,false,false);
         });
@@ -267,6 +268,40 @@ Ext.onReady(function() {
             }
         });
 
+        MESSAGING.getInstance().registerHandler("flash-polygon", function(e) {
+            var data = JSON.parse(e.message);
+            var features = [];
+            for( var i=0; i<data.length; i++ ) {
+                var points = [];
+                for( var j=0; j<data[i].length; j++ ) {
+                    points.push(transformToXY(data[i][j]));
+                }
+                var ring = new OpenLayers.Geometry.LinearRing(points);
+                var center = ring.getCentroid();
+                var feature =
+                    new OpenLayers.Feature.Vector(
+                       new OpenLayers.Geometry.Polygon(ring),
+                       {},
+                       {
+                           fillColor: '#FF0000',
+                           fillOpacity: 0.05,
+                           strokeColor: '#FF0000',
+                           strokeOpacity: 0.05
+                       }
+                    );
+                feature.state = OpenLayers.State.INSERT;
+                features.push(feature);
+            }
+
+            app.mapPanel.map.setCenter([center.x, center.y]);
+            polygonLayer.addFeatures(features);
+            polygonLayer.redraw();
+            setTimeout( function() {
+                polygonLayer.removeFeatures(features);
+                polygonLayer.redraw();
+            },2000);
+
+        });
 
         MESSAGING.getInstance().send(new Message("portalReady", {}));
     });

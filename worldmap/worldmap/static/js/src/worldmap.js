@@ -8,10 +8,9 @@ function WorldMapXBlock(runtime, element) {
     console.log("Initializing WorldMapXBlock "+$('.frame', element).attr('id'))
 
     MESSAGING.getInstance().addHandler(getUniqueId(),"info", function(m) { alert("info: "+m.getMessage()); });
-    MESSAGING.getInstance().addHandler(getUniqueId(),"zoomend", function(m) { on_setZoomLevel(element, m.getMessage()); });
-    MESSAGING.getInstance().addHandler(getUniqueId(),"moveend", function(m) { on_setCenter(element, m.getMessage()); });
-    MESSAGING.getInstance().addHandler(getUniqueId(),"changelayer", function(m) { on_changeLayer(element, m.getMessage()); });
-    MESSAGING.getInstance().addHandler(getUniqueId(),"answer-tool-done", function(m) { on_answer_tool_done(element, m.getMessage()); });
+    MESSAGING.getInstance().addHandler(getUniqueId(),"zoomend", function(m) { on_setZoomLevel(m.getMessage()); });
+    MESSAGING.getInstance().addHandler(getUniqueId(),"moveend", function(m) { on_setCenter(m.getMessage()); });
+    MESSAGING.getInstance().addHandler(getUniqueId(),"changelayer", function(m) { on_changeLayer(m.getMessage()); });
 
     MESSAGING.getInstance().addHandler(getUniqueId(),"portalReady", function(m) {
 
@@ -186,7 +185,7 @@ function WorldMapXBlock(runtime, element) {
                 if( result != null ) {
                     var html = "<ol>"+result.explanation;
                     for(var i in result.answers) {
-                        result.answers[i].padding = result.padding;
+                        result.answers[i].padding = result.padding;  //TODO: should be done on xml read, not here!
                         html += "<li><span id='answer-"+result.answers[i].id+"'><span>"+result.answers[i].explanation+"</span><br/><span class='"+result.answers[i].type+"-tool'/><span id='score-"+result.answers[i].id+"'/><div id='dialog-"+result.answers[i].id+"'/></span></li>";
                     }
                     html += "</ol>";
@@ -261,6 +260,21 @@ function WorldMapXBlock(runtime, element) {
         MESSAGING.getInstance().addHandler(getUniqueId(),"polygon_response", responseHandler);
     });
 
+//    function flashHint(type, buffer, g) {
+//        alert("flashHint called");
+//        $.ajax({
+//            type: "POST",
+//            url: runtime.handlerUrl(element,"getFuzzyGeometry"),
+//            data: JSON.stringify({
+//                buffer: buffer,
+//                type: type,
+//                geometry: g
+//            }),
+//            success: function(result) {
+//                MESSAGING.getInstance().send(getUniqueId(), new Message("flash-polygon", result));
+//            }
+//        })
+//    }
     function responseHandler(m) {
         var data = JSON.parse(JSON.parse(m.message));
         $.ajax({
@@ -288,11 +302,13 @@ function WorldMapXBlock(runtime, element) {
                             var hintAfterAttempt = result.answer.hintAfterAttempt;
                             if( hintAfterAttempt != null ) {
                                 if( nAttempt % hintAfterAttempt == 0) {
+                                    HintManager.getInstance().initialize(runtime,element,getUniqueId());
                                     var html = "<ul>";
                                     for( var i=0;i<result.answer.constraints.length; i++) {
                                         var constraint = result.answer.constraints[i];
                                         if( !constraint.satisfied ) {
-                                            html += "<li>"+constraint.explanation+"</li>";
+                                            HintManager.getInstance().addConstraint(i,constraint);
+                                            html += "<li>"+constraint.explanation+"<a href='#' onclick='HintManager.getInstance().flashHint("+i+")'>hint</a></li>";
                                         }
                                     }
                                     html += "</ul>";
@@ -326,10 +342,10 @@ function WorldMapXBlock(runtime, element) {
         return $('.frame', element).attr('id');
     }
 
-    function on_setZoomLevel(el, level) {
+    function on_setZoomLevel(level) {
         $.ajax({
             type: "POST",
-            url: runtime.handlerUrl(el, 'set_zoom_level'),
+            url: runtime.handlerUrl(element, 'set_zoom_level'),
             data: JSON.stringify({zoomLevel: level}),
             success: function(result) {
 //                var id = $('.frame', el).attr('id');
@@ -337,23 +353,21 @@ function WorldMapXBlock(runtime, element) {
             }
         });
     }
-    function on_setCenter(el, json) {
+    function on_setCenter(json) {
         var data = JSON.parse(json);
         $.ajax({
             type: "POST",
-            url: runtime.handlerUrl(el, 'set_center'),
+            url: runtime.handlerUrl(element, 'set_center'),
             data: JSON.stringify({centerLat: data.center.y,  centerLon: data.center.x, zoomLevel:data.zoomLevel}),
             success: function(result) {
                 if( !result ) {
                     alert("Failed to setCenter for map: "+$('.frame', el).attr('id'));
                 }
-//                var id = $('.frame', el).attr('id');
-//                alert("viewLimits of "+id+" successfully changed to: "+result.viewLimits);
             }
         });
     }
 
-    function on_changeLayer(el, json) {
+    function on_changeLayer(json) {
         var layer = JSON.parse(json);
 
         var legendData = layer.legendData;
@@ -363,7 +377,7 @@ function WorldMapXBlock(runtime, element) {
                                     + legendData.name+"&STYLE="+legendData.styles+"&transparent=true&format=image%2Fpng&legend_options=fontAntiAliasing%3Atrue";
         }
 
-        $(".layerControls",el).dynatree("getRoot").visit( function(node) {
+        $(".layerControls",element).dynatree("getRoot").visit( function(node) {
             if( !node.isExpanded() ) { //if it isn't expanded, we need to expand/contract it so that all the children get loaded
                 node.expand(true);
                 node.expand(false);
@@ -376,19 +390,19 @@ function WorldMapXBlock(runtime, element) {
             }
         });
 
-        if( $('.frame',el).attr('debug') ) {
+        if( $('.frame',element).attr('debug') ) {
             if( layer.visibility ) {
-                $(".layerIdInfo",el).text(layer.id);
+                $(".layerIdInfo",element).text(layer.id);
             }
         }
 
         $.ajax({
             type: "POST",
-            url: runtime.handlerUrl(el, 'change_layer_properties'),
+            url: runtime.handlerUrl(element, 'change_layer_properties'),
             data: json,
             success: function(result) {
                 if( !result ) {
-                    console.log("Failed to change layer for map: "+$('.frame', el).attr('id'));
+                    console.log("Failed to change layer for map: "+$('.frame', element).attr('id'));
                 }
             }
         });
@@ -399,47 +413,99 @@ function WorldMapXBlock(runtime, element) {
   //      $(document).tooltip();
         /* Here's where you'd do things on page load. */
     });
-}
 
-
-function info(msgHtml, duration) {
-    if( duration == undefined ) duration = 5000;
-    if( document.getElementById("dialog") == undefined ) {
-        $("body").append($('<div/>', {id: 'dialog'}));
+    function info(msgHtml, duration) {
+        if( duration == undefined ) duration = 5000;
+        if( document.getElementById("dialog") == undefined ) {
+            $("body").append($('<div/>', {id: 'dialog'}));
+        }
+        try {
+            $('#dialog').prop("title","Info").html(msgHtml).dialog({
+                modal: false,
+                closeOnEscape: true,
+                title: "Info:",
+                position: ['center', 'middle'],
+                show: 'blind',
+                hide: 'blind',
+                dialogClass: 'ui-dialog-osx'
+            });
+            if( duration > 0 ) {
+                window.setTimeout( function() {
+                    $('#dialog').dialog("close");
+                }, duration);
+            }
+        } catch (e) {
+            console.log("exception: "+e+"\n"+ e.stack);
+        }
     }
-    try {
-        $('#dialog').prop("title","Info").html(msgHtml).dialog({
-            modal: false,
-            title: "Info:",
+
+    function error(msgHtml) {
+        if( document.getElementById("dialog") == undefined ) {
+            $("body").append($('<div/>', {id: 'dialog'}));
+        }
+        try {
+        $('#dialog').html(msgHtml).dialog({
+            modal: true,
+            title: "Error!",
             position: ['center', 'middle'],
             show: 'blind',
             hide: 'blind',
             dialogClass: 'ui-dialog-osx'
         });
-        if( duration > 0 ) {
-            window.setTimeout( function() {
-                $('#dialog').dialog("close");
-            }, duration);
+        } catch (e) {
+            console.log("exception: "+e);
         }
-    } catch (e) {
-        console.log("exception: "+e+"\n"+ e.stack);
     }
+
 }
 
-function error(msgHtml) {
-    if( document.getElementById("dialog") == undefined ) {
-        $("body").append($('<div/>', {id: 'dialog'}));
+var HintManager = (function HintManagerSingleton() { // declare 'Singleton' as the return value of a self-executing anonymous function
+    var _instance = null;
+    var _constructor = function() {
+        this.element = undefined;
+        this.constraints = [];
+    };
+    _constructor.prototype = { // *** prototypes will be "public" methods available to the instance
+        initialize: function( runtime, element, uniqId ) {
+            this.element = element;
+            this.runtime = runtime;
+            this.uniqId = uniqId;
+            this.constraints = [];
+        },
+        addConstraint: function(indx, constraint) {
+           this.constraints[indx] = constraint;
+//            console.log("addConstraint["+this.constraints.length+"] = "+JSON.stringify(constraint));
+        },
+        flashHint: function(indx) {
+            var _this = this;
+            var type = _this.constraints[indx]['geometry']['type'];
+            var geo = _this.constraints[indx]['geometry'];
+            if( type == 'polygon' ) {
+                geo = _this.constraints[indx]['geometry']['points'];
+            }
+            $.ajax({
+                type: "POST",
+                url: this.runtime.handlerUrl(_this.element,"getFuzzyGeometry"),
+                data: JSON.stringify({
+                    buffer: 200,
+                    type: type,
+                    geometry: geo
+                }),
+                success: function(result) {
+                    MESSAGING.getInstance().send(_this.uniqId, new Message("flash-polygon", result));
+                }
+            })
+        }
+    };
+    return {
+        // because getInstance is defined within the same scope, it can access the "private" '_instance' and '_constructor' vars
+        getInstance: function() {
+           if( !_instance ) {
+              _instance = new _constructor();
+           }
+           return _instance;
+        }
     }
-    try {
-    $('#dialog').html(msgHtml).dialog({
-        modal: true,
-        title: "Error!",
-        position: ['center', 'middle'],
-        show: 'blind',
-        hide: 'blind',
-        dialogClass: 'ui-dialog-osx'
-    });
-    } catch (e) {
-        console.log("exception: "+e);
-    }
-}
+})();
+
+
