@@ -182,8 +182,9 @@ class WorldMapXBlock(XBlock):
 
     @XBlock.json_handler
     def point_response(self, data, suffix=''):
-        padding = data['answer']['padding']
+#        padding = data['answer']['padding']
         correctPoint = data['answer']['constraints'][0]['geometry']
+        padding = data['answer']['constraints'][0]['padding']
         userAnswer = data['point']
         latitude = userAnswer['lat']
         longitude= userAnswer['lon']
@@ -257,15 +258,8 @@ class WorldMapXBlock(XBlock):
             for answer in self.get_parent().answers:
                 arr.append( answer.data )
 
-            padding = 1
-            try:
-                padding = self.get_parent().padding
-            except ValueError:
-                print "Invalid value for attribute 'padding' on tag <worldmap-quiz>"
-
             return {
                 'answers': arr,
-                'padding': padding,
                 'explanation': self.get_parent().explanation.content
             }
         return None
@@ -395,7 +389,7 @@ class WorldMapXBlock(XBlock):
             ("WorldMapXBlock",
              """
              <vertical_demo>
-               <worldmap-quiz padding='1000'>
+               <worldmap-quiz>
                     <explanation>
                          <B>A quiz about the Boston area</B>
                     </explanation>
@@ -404,7 +398,7 @@ class WorldMapXBlock(XBlock):
                           Where is the biggest island in Boston harbor?
                        </explanation>
                        <constraints>
-                          <matches percentOfGrade="25" percentMatch="100" >
+                          <matches percentOfGrade="25" percentMatch="100" padding='1000'>
                               <point lon="-70.9657058456866" lat="42.32011232390349"/>
                               <explanation>
                                  <B> Look at boston harbor - pick the biggest island </B>
@@ -417,7 +411,7 @@ class WorldMapXBlock(XBlock):
                           Where is the land bridge that formed Nahant bay?
                        </explanation>
                        <constraints>
-                          <matches percentOfGrade="25" percentMatch="100">
+                          <matches percentOfGrade="25" percentMatch="100" padding='1000'>
                               <point lon="-70.93824002537393" lat="42.445896458204764"/>
                               <explanation>
                                  <B>Hint:</B> Look for Nahant Bay on the map
@@ -430,7 +424,7 @@ class WorldMapXBlock(XBlock):
                           Draw a polygon around "back bay"?
                        </explanation>
                        <constraints hintDisplayTime='-1'>
-                          <matches percentOfGrade="25" percentMatch="80">
+                          <matches percentOfGrade="25" percentMatch="80" padding='1000'>
                              <polygon>
                                  <point lon="-71.09350774082822" lat="42.35148683512319"/>
                                  <point lon="-71.09275672230382" lat="42.34706235935522"/>
@@ -453,7 +447,7 @@ class WorldMapXBlock(XBlock):
                                  <B>Hint:</B> Back bay was a land fill into the Charles River basin
                              </explanation>
                           </matches>
-                          <includes percentOfGrade="25" >
+                          <includes percentOfGrade="25" padding='100'>
                              <polygon>
                                 <point lon="-71.07466790470745" lat="42.35719537593463"/>
                                 <point lon="-71.08492467197995" lat="42.35399231410341"/>
@@ -468,13 +462,13 @@ class WorldMapXBlock(XBlock):
                                 <B>Must</B> include the esplanade
                              </explanation>
                           </includes>
-                          <excludes percentOfGrade="25" >
+                          <excludes percentOfGrade="25" padding='25'>
                              <point lon="-71.07071969303735" lat="42.351962566661165"/>
                              <explanation>
                                 Must <B>not</B> include intersection of Boylston and Arlington Streets
                              </explanation>
                           </excludes>
-                          <excludes percentOfGrade="10" >
+                          <excludes percentOfGrade="10" padding='150'>
                             <polygon>
                                <point lon="-71.06994721684204" lat="42.349520439895464"/>
                                <point lon="-71.0687455872032" lat="42.34856893624958"/>
@@ -484,15 +478,15 @@ class WorldMapXBlock(XBlock):
                               Must <b>not</b> include <i>Bay Village</i>
                             </explanation>
                           </excludes>
-                          <includes percentOfGrade="25" >
-                             <point lon="-71.08303639683305" lat="42.341527361626746"/>
+                          <includes percentOfGrade="25" padding='50' >
+                             <point lon="-71.08303639683305" lat="42.341527361626746" />
                              <explanation>
                                 <B>Must</B> include corner of <i>Mass ave.</i> and <i>SW Corridor Park</i>
                              </explanation>
                           </includes>
                        </constraints>
                     </answer>
-                    <answer id='esplanade' color='00FF00' type='polygon' hintAfterAttempt='2'>
+                    <answer id='esplanade' color='00FF00' type='polygon' hintAfterAttempt='2' padding='500'>
                        <explanation>
                            Draw a polygon around the esplanade
                        </explanation>
@@ -693,8 +687,6 @@ class WorldMapXBlock(XBlock):
 #******************************************************************************************************
 class WorldmapQuizBlock(XBlock):
 
-    padding = Integer(help="default padding distance (meters)", default=1, scope=Scope.content)
-
     has_score = True
 
     has_children = True
@@ -745,13 +737,16 @@ class ConstraintBlock(XBlock):
 
     has_children = True
     percentOfGrade = Float(help="how much of overall grade is dependent on this constraint being satisfied", default=100, scope=Scope.content)
+    padding = Integer(help="default padding distance (meters)", default=1, scope=Scope.content)
 
     @property
     def data(self):
         return {
             'explanation':self.explanation.content,
-            'geometry':self.geometry.data
+            'geometry':self.geometry.data,
+            'padding':self.padding
         }
+
     @property
     def explanation(self):
         for child_id in self.children:  # pylint: disable=E1101
@@ -779,6 +774,7 @@ class MatchesConstraintBlock(ConstraintBlock):
             'type':'matches',
             'percentMatch':self.percentMatch,
             'geometry':self.geometry.data,
+            'padding':self.padding,
             'explanation':self.explanation.content
         }
 
@@ -791,6 +787,7 @@ class IncludesConstraintBlock(ConstraintBlock):
         return {
             'type':'includes',
             'geometry':self.geometry.data,
+            'padding':self.padding,
             'explanation':self.explanation.content
         }
 
@@ -802,6 +799,7 @@ class ExcludesConstraintBlock(ConstraintBlock):
         return {
             'type':'excludes',
             'geometry':self.geometry.data,
+            'padding':self.padding,
             'explanation':self.explanation.content
         }
 
@@ -856,6 +854,7 @@ class AnswerBlock(XBlock):
     color = String(help="the color of the polyline,polygon or marker", default="#FF0000", scope=Scope.content)
     type  = String(help="the type of the answer point|polygon|polyline|directed-polyline", default=None, scope=Scope.content)
     hintAfterAttempt= Integer(help="display hint button after N failed attempts", default=None, scope=Scope.content)
+#    padding = Integer(help="default padding distance (meters)", default=None, scope=Scope.content)
 
     # since we are currently only allowing a single answer, the percentOfGrade will be 100%
     percentOfGrade = Float(help="how much of overall grade is dependent on this answer", default=100, scope=Scope.content)
@@ -914,6 +913,7 @@ class ConstraintsBlock(XBlock):
 
     @property
     def constraints(self):
+
         constraints = []
         for child_id in self.children:  # pylint: disable=E1101
             child = self.runtime.get_block(child_id)

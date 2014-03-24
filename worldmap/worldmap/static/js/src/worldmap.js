@@ -487,7 +487,7 @@ var HintManager = (function HintManagerSingleton() { // declare 'Singleton' as t
                 type: "POST",
                 url: this.runtime.handlerUrl(_this.element,"getFuzzyGeometry"),
                 data: JSON.stringify({
-                    buffer: 200,
+                    buffer: _this.constraints[indx]['padding'],
                     type: type,
                     geometry: geo
                 }),
