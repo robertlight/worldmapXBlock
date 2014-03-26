@@ -291,7 +291,7 @@ function WorldMapXBlock(runtime, element) {
                         MESSAGING.getInstance().sendAll( new Message("reset-answer-tool",null));
                         info("Correct!", 1000);
                     } else {
-                        div.html("<img src='/resource/equality_demo/public/images/incorrect-icon.png'/>");
+                        div.html("<img src='/resource/equality_demo/public/images/incorrect-icon.png'/>&nbsp;"+result.correctExplanation);
                         if( result.error != null ) {
                             error(result.error);
                         } else {
@@ -421,13 +421,19 @@ function WorldMapXBlock(runtime, element) {
         }
         try {
             $('#dialog').prop("title","Info").html(msgHtml).dialog({
-                modal: false,
+                modal: true,
                 closeOnEscape: true,
                 title: "Info:",
                 position: ['center', 'middle'],
                 show: 'blind',
                 hide: 'blind',
-                dialogClass: 'ui-dialog-osx'
+                dialogClass: 'ui-dialog-osx',
+                beforeClose: function() {
+                    $(".ui-widget-overlay").css("opacity","0.3");
+                },
+                open: function() {
+                    $(".ui-widget-overlay").css("opacity","0.15");
+                }
             });
             if( duration > 0 ) {
                 window.setTimeout( function() {
@@ -450,7 +456,10 @@ function WorldMapXBlock(runtime, element) {
             position: ['center', 'middle'],
             show: 'blind',
             hide: 'blind',
-            dialogClass: 'ui-dialog-osx'
+            dialogClass: 'ui-dialog-osx',
+            open: function() {
+                $(".ui-widget-overlay").css("opacity","0.3");
+            }
         });
         } catch (e) {
             console.log("exception: "+e);

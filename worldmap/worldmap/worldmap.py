@@ -194,8 +194,20 @@ class WorldMapXBlock(XBlock):
         sinHalfDeltaLat = math.sin(math.pi * (correctPoint['lat']-latitude)/360)
         a = sinHalfDeltaLat * sinHalfDeltaLat + sinHalfDeltaLon*sinHalfDeltaLon * math.cos(math.pi*latitude/180)*math.cos(math.pi*correctPoint['lat']/180)
         isHit = 2*self.SPHERICAL_DEFAULT_RADIUS*math.atan2(math.sqrt(a), math.sqrt(1-a)) < padding
+
+        correctExplanation = ""
+        percentCorrect = 100
+        if not isHit :
+            correctExplanation = "incorrect location"
+            percentCorrect = 0
+
+        if isinstance(self.get_parent(), WorldmapQuizBlock ):
+            self.get_parent().setScore(data['answer']['id'], percentCorrect, 100)
+
         return {
             'answer':data['answer'],
+            'percentCorrect': percentCorrect,
+            'correctExplanation': correctExplanation,
             'isHit': isHit
         }
 
@@ -207,18 +219,24 @@ class WorldMapXBlock(XBlock):
             arr.append((pt['lon']+360., pt['lat']))
         answerPolygon = Polygon(arr)
 
+        additionalErrorInfo = ""
+
         isHit = True
         try:
 
+            totalGradeValue = 0
+            totalCorrect = 0
             for constraint in data['answer']['constraints']:
                 constraintSatisfied = True
+
 
                 if( constraint['type'] == 'matches'):
 
                     constraintPolygon = makePolygon(constraint['geometry']['points'])
+                    overage = answerPolygon.difference(constraintPolygon).area
                     percentMatch = constraint['percentMatch']
-                    constraintSatisfied = (answerPolygon.difference(constraintPolygon).area*100/constraintPolygon.area < (100-percentMatch)) \
-                          and (answerPolygon.difference(constraintPolygon).area*100/answerPolygon.area < (100-percentMatch)) \
+                    constraintSatisfied = (overage*100/constraintPolygon.area < 1.5*(100-percentMatch)) \
+                          and (overage*100/answerPolygon.area < (100-percentMatch)) \
                           and (constraintPolygon.difference(answerPolygon).area*100/constraintPolygon.area < (100-percentMatch))
 
                 elif( constraint['type'] == 'includes' or constraint['type'] == 'excludes'):
@@ -227,13 +245,28 @@ class WorldMapXBlock(XBlock):
 
                         if( constraint['type'] == 'includes' ):
                             constraintSatisfied = answerPolygon.contains(constraintPolygon)
+                            if constraintSatisfied and constraint['maxAreaFactor'] != None :
+                                constraintSatisfied = answerPolygon.area/constraintPolygon.area < constraint['maxAreaFactor']
+                                if not constraintSatisfied :
+                                    additionalErrorInfo = " (polygon too big)"
                         else:
                             constraintSatisfied = constraintPolygon.disjoint(answerPolygon)
                     elif( constraint['geometry']['type'] == 'point' ):
                         if( constraint['type'] == 'includes' ):
-                            constraintSatisfied = answerPolygon.contains(makePoint(constraint['geometry']))
+                            constraintPt = makePoint(constraint['geometry'])
+
+                            constraintSatisfied = answerPolygon.contains(constraintPt)
+                            if constraintSatisfied and constraint['maxAreaFactor'] != None :
+                                constraintSatisfied = answerPolygon.area/constraintPt.buffer(180*constraint['padding']/(self.SPHERICAL_DEFAULT_RADIUS*math.pi)).area < constraint['maxAreaFactor']
+                                if not constraintSatisfied :
+                                    additionalErrorInfo = " (polygon too big)"
                         else:
                             constraintSatisfied = answerPolygon.disjoint(makePoint(constraint['geometry']))
+
+                totalGradeValue += constraint['percentOfGrade']
+                if constraintSatisfied :
+                    totalCorrect += constraint['percentOfGrade']
+
                 isHit = isHit and constraintSatisfied
                 constraint['satisfied'] = constraintSatisfied
 
@@ -246,9 +279,16 @@ class WorldMapXBlock(XBlock):
         except:
             print _("Unexpected error: "), sys.exc_info()[0]
 
+        percentIncorrect = math.floor( 100 - totalCorrect*100/totalGradeValue);
+
+        if isinstance(self.get_parent(), WorldmapQuizBlock ):
+            self.get_parent().setScore(data['answer']['id'], 100-percentIncorrect, 100)
+
         return {
             'answer':data['answer'],
-            'isHit': isHit
+            'isHit': isHit,
+            'percentCorrect': 100-percentIncorrect,
+            'correctExplanation': "{:.0f}% incorrect".format(percentIncorrect)+additionalErrorInfo
         }
 
     @XBlock.json_handler
@@ -389,7 +429,7 @@ class WorldMapXBlock(XBlock):
             ("WorldMapXBlock",
              """
              <vertical_demo>
-               <worldmap-quiz>
+                <worldmap-quiz>
                     <explanation>
                          <B>A quiz about the Boston area</B>
                     </explanation>
@@ -406,25 +446,25 @@ class WorldMapXBlock(XBlock):
                           </matches>
                        </constraints>
                     </answer>
-                    <answer id='baz' color='0000FF' type='point'>
+                    <answer id='baz' color='0000FF' type='polygon' hintAfterAttempt='2'>
                        <explanation>
-                          Where is the land bridge that formed Nahant bay?
+                          Draw a polygon around the land bridge that formed Nahant bay?
                        </explanation>
                        <constraints>
-                          <matches percentOfGrade="25" percentMatch="100" padding='1000'>
+                          <includes percentOfGrade="25" padding='500' maxAreaFactor='15'>
                               <point lon="-70.93824002537393" lat="42.445896458204764"/>
                               <explanation>
                                  <B>Hint:</B> Look for Nahant Bay on the map
                               </explanation>
-                          </matches>
+                          </includes>
                        </constraints>
                     </answer>
-                    <answer id='area' color='FF00FF' type='polygon' hintAfterAttempt='3'>
+                    <answer id='area' color='FF00FF' type='polygon' hintAfterAttempt='2'>
                        <explanation>
                           Draw a polygon around "back bay"?
                        </explanation>
                        <constraints hintDisplayTime='-1'>
-                          <matches percentOfGrade="25" percentMatch="80" padding='1000'>
+                          <matches percentOfGrade="25" percentMatch="60" padding='1000'>
                              <polygon>
                                  <point lon="-71.09350774082822" lat="42.35148683512319"/>
                                  <point lon="-71.09275672230382" lat="42.34706235935522"/>
@@ -486,12 +526,12 @@ class WorldMapXBlock(XBlock):
                           </includes>
                        </constraints>
                     </answer>
-                    <answer id='esplanade' color='00FF00' type='polygon' hintAfterAttempt='2' padding='500'>
+                    <answer id='esplanade' color='00FF00' type='polygon' hintAfterAttempt='2'>
                        <explanation>
                            Draw a polygon around the esplanade
                        </explanation>
                        <constraints hintDisplayTime='-1'>
-                          <matches percentMatch='80' percentOfGrade="25" >
+                          <matches percentMatch='60' percentOfGrade="25"  padding='0'>
                              <polygon>
                                 <point lon="-71.07466790470745" lat="42.35719537593463"/>
                                 <point lon="-71.08492467197995" lat="42.35399231410341"/>
@@ -508,80 +548,80 @@ class WorldMapXBlock(XBlock):
                           </matches>
                        </constraints>
                     </answer>
-                <worldmap href='http://23.21.172.243/maps/bostoncensus/embed?' debug='true' width='600' height='400' baseLayer='OpenLayers_Layer_Google_116'>
-                   <layers>
-                      <layer id="geonode:qing_charity_v1_mzg"/>
-                      <layer id="OpenLayers_Layer_WMS_122">
-                         <param name="CensusYear" value="1972"/>
-                      </layer>
-                      <layer id="OpenLayers_Layer_WMS_124">
-                         <param name="CensusYear" min="1973" max="1977"/>
-                      </layer>
-                      <layer id="OpenLayers_Layer_WMS_120">
-                         <param name="CensusYear" value="1976"/>
-                      </layer>
-                      <layer id="OpenLayers_Layer_WMS_118">
-                         <param name="CensusYear" value="1978"/>
-                      </layer>
-                      <layer id="OpenLayers_Layer_Vector_132">
-                         <param name="CensusYear" value="1980"/>
-                      </layer>
-                   </layers>
-                   <group-control name="Census Data" visible="true">
-                      <layer-control layerid="OpenLayers_Layer_WMS_120" visible="true" name="layer0"/>
-                      <layer-control layerid="OpenLayers_Layer_WMS_122" visible="true" name="layerA"/>
-                      <layer-control layerid="OpenLayers_Layer_WMS_124" visible="true" name="layerB"/>
-                      <layer-control layerid="OpenLayers_Layer_WMS_120" visible="false" name="layerC"/>
-                      <layer-control layerid="OpenLayers_Layer_WMS_118" visible="true" name="layerE"/>
-                      <layer-control layerid="OpenLayers_Layer_Vector_132" visible="true" name="layerF"/>
-                      <group-control name="A sub group of layers">
-                         <group-control name="A sub-sub-group">
-                            <layer-control layerid="OpenLayers_Layer_WMS_118" visible="true" name="layerE.1"/>
-                            <layer-control layerid="OpenLayers_Layer_Vector_132" visible="true" name="layerF.1"/>
-                         </group-control>
-                         <group-control name="another sub-sub-group" visible="false">
-                            <layer-control layerid="OpenLayers_Layer_WMS_118" visible="true" name="layerE.2"/>
-                            <layer-control layerid="OpenLayers_Layer_Vector_132" visible="true" name="layerF.2"/>
-                         </group-control>
-                         <layer-control layerid="OpenLayers_Layer_WMS_122" visible="true" name="layerA.1"/>
-                         <layer-control layerid="OpenLayers_Layer_WMS_124" visible="true" name="layerB.1"/>
-                      </group-control>
-                   </group-control>
+                    <worldmap href='http://23.21.172.243/maps/bostoncensus/embed?' debug='true' width='600' height='400' baseLayer='OpenLayers_Layer_Google_116'>
+                       <layers>
+                          <layer id="geonode:qing_charity_v1_mzg"/>
+                          <layer id="OpenLayers_Layer_WMS_122">
+                             <param name="CensusYear" value="1972"/>
+                          </layer>
+                          <layer id="OpenLayers_Layer_WMS_124">
+                             <param name="CensusYear" min="1973" max="1977"/>
+                          </layer>
+                          <layer id="OpenLayers_Layer_WMS_120">
+                             <param name="CensusYear" value="1976"/>
+                          </layer>
+                          <layer id="OpenLayers_Layer_WMS_118">
+                             <param name="CensusYear" value="1978"/>
+                          </layer>
+                          <layer id="OpenLayers_Layer_Vector_132">
+                             <param name="CensusYear" value="1980"/>
+                          </layer>
+                       </layers>
+                       <group-control name="Census Data" visible="true">
+                          <layer-control layerid="OpenLayers_Layer_WMS_120" visible="true" name="layer0"/>
+                          <layer-control layerid="OpenLayers_Layer_WMS_122" visible="true" name="layerA"/>
+                          <layer-control layerid="OpenLayers_Layer_WMS_124" visible="true" name="layerB"/>
+                          <layer-control layerid="OpenLayers_Layer_WMS_120" visible="false" name="layerC"/>
+                          <layer-control layerid="OpenLayers_Layer_WMS_118" visible="true" name="layerE"/>
+                          <layer-control layerid="OpenLayers_Layer_Vector_132" visible="true" name="layerF"/>
+                          <group-control name="A sub group of layers">
+                             <group-control name="A sub-sub-group">
+                                <layer-control layerid="OpenLayers_Layer_WMS_118" visible="true" name="layerE.1"/>
+                                <layer-control layerid="OpenLayers_Layer_Vector_132" visible="true" name="layerF.1"/>
+                             </group-control>
+                             <group-control name="another sub-sub-group" visible="false">
+                                <layer-control layerid="OpenLayers_Layer_WMS_118" visible="true" name="layerE.2"/>
+                                <layer-control layerid="OpenLayers_Layer_Vector_132" visible="true" name="layerF.2"/>
+                             </group-control>
+                             <layer-control layerid="OpenLayers_Layer_WMS_122" visible="true" name="layerA.1"/>
+                             <layer-control layerid="OpenLayers_Layer_WMS_124" visible="true" name="layerB.1"/>
+                          </group-control>
+                       </group-control>
 
-                   <sliders>
-                      <slider id="timeSlider" title="A" param="CensusYear" min="1972" max="1980" increment="0.2" position="left"/>
-                      <slider id="timeSlider7" title="Abcdefg" param="CensusYear" min="1972" max="1980" increment="0.2" position="left"/>
-                      <slider id="timeSlider2" title="B" param="CensusYear" min="1972" max="1980" increment="0.2" position="right">
-                         <help>
-                            <B>ABC</B><br/>
-                            <i>yippity doo dah</i>
-                         </help>
-                      </slider>
-                      <slider id="timeSlider6" title="Now is the time for" param="CensusYear" min="1972" max="1980" increment="0.2" position="right">
-                         <help>
-                             <B>This can be any html</B><br/>
-                             <i>you can use to create help info for using the slider</i><br/>
-                             <b>You can even include images:</b>
-                             <img src="http://static.adzerk.net/Advertisers/bc85dff2b3dc44ddb9650e1659b1ad1e.png"/>
-                         </help>
-                      </slider>
-                      <slider id="timeSlider3" title="Hello world" param="CensusYear" min="1972" max="1980" increment="0.2" position="top"/>
-                      <slider id="timeSlider8" title="Hello world12345" param="CensusYear" min="1972" max="1980" increment="0.2" position="top"/>
-                      <slider id="timeSlider4" title="Now is the time for all good men" param="CensusYear" min="1972" max="1980" increment="0.2" position="bottom"/>
-                      <slider id="timeSlider5" title="to come to the aid of their country" param="CensusYear" min="1972" max="1980" increment="0.2" position="bottom">
-                         <help>
-                             <B>This is some generalized html</B><br/>
-                             <i>you can use to create help info for using the slider</i>
-                             <ul>
-                                <li>You can explain what it does</li>
-                                <li>How to interpret things</li>
-                                <li>What other things you might be able to do</li>
-                             </ul>
-                         </help>
-                      </slider>
-                    </sliders>
-                </worldmap>
-              </worldmap-quiz>
+                       <sliders>
+                          <slider id="timeSlider" title="A" param="CensusYear" min="1972" max="1980" increment="0.2" position="left"/>
+                          <slider id="timeSlider7" title="Abcdefg" param="CensusYear" min="1972" max="1980" increment="0.2" position="left"/>
+                          <slider id="timeSlider2" title="B" param="CensusYear" min="1972" max="1980" increment="0.2" position="right">
+                             <help>
+                                <B>ABC</B><br/>
+                                <i>yippity doo dah</i>
+                             </help>
+                          </slider>
+                          <slider id="timeSlider6" title="Now is the time for" param="CensusYear" min="1972" max="1980" increment="0.2" position="right">
+                             <help>
+                                 <B>This can be any html</B><br/>
+                                 <i>you can use to create help info for using the slider</i><br/>
+                                 <b>You can even include images:</b>
+                                 <img src="http://static.adzerk.net/Advertisers/bc85dff2b3dc44ddb9650e1659b1ad1e.png"/>
+                             </help>
+                          </slider>
+                          <slider id="timeSlider3" title="Hello world" param="CensusYear" min="1972" max="1980" increment="0.2" position="top"/>
+                          <slider id="timeSlider8" title="Hello world12345" param="CensusYear" min="1972" max="1980" increment="0.2" position="top"/>
+                          <slider id="timeSlider4" title="Now is the time for all good men" param="CensusYear" min="1972" max="1980" increment="0.2" position="bottom"/>
+                          <slider id="timeSlider5" title="to come to the aid of their country" param="CensusYear" min="1972" max="1980" increment="0.2" position="bottom">
+                             <help>
+                                 <B>This is some generalized html</B><br/>
+                                 <i>you can use to create help info for using the slider</i>
+                                 <ul>
+                                    <li>You can explain what it does</li>
+                                    <li>How to interpret things</li>
+                                    <li>What other things you might be able to do</li>
+                                 </ul>
+                             </help>
+                          </slider>
+                        </sliders>
+                    </worldmap>
+                </worldmap-quiz>
               """
               #<worldmap-quiz padding='10'>
               #    <worldmap name='worldmap' href='http://worldmap.harvard.edu/maps/chinaX/embed?' width='800' height='600' testLatitude='16.775800549402906' testLongitude='-3.0166396836062104' testRadius='10000' debug="true">
@@ -687,8 +727,6 @@ class WorldMapXBlock(XBlock):
 #******************************************************************************************************
 class WorldmapQuizBlock(XBlock):
 
-    has_score = True
-
     has_children = True
 
     def student_view(self, context=None):
@@ -731,6 +769,14 @@ class WorldmapQuizBlock(XBlock):
                 return child
         return None
 
+    def setScore(self, answerId, value, max_value):
+        for child_id in self.children:  # pylint: disable=E1101
+            child = self.runtime.get_block(child_id)
+            if (isinstance(child, AnswerBlock) and child.id == answerId) :
+                child.setScore(value,max_value)
+                return
+        raise "Answer not found for id="+answerId
+
     problem_view = student_view
 
 class ConstraintBlock(XBlock):
@@ -744,6 +790,7 @@ class ConstraintBlock(XBlock):
         return {
             'explanation':self.explanation.content,
             'geometry':self.geometry.data,
+            'percentOfGrade':self.percentOfGrade,
             'padding':self.padding
         }
 
@@ -775,6 +822,7 @@ class MatchesConstraintBlock(ConstraintBlock):
             'percentMatch':self.percentMatch,
             'geometry':self.geometry.data,
             'padding':self.padding,
+            'percentOfGrade':self.percentOfGrade,
             'explanation':self.explanation.content
         }
 
@@ -782,12 +830,16 @@ class IncludesConstraintBlock(ConstraintBlock):
 
     has_children = True
 
+    maxAreaFactor = Float("drawn polygon must be no more than maxAreaFactor times the size of the included polygon", default=None, scope=Scope.content)
+
     @property
     def data(self):
         return {
             'type':'includes',
             'geometry':self.geometry.data,
             'padding':self.padding,
+            'percentOfGrade':self.percentOfGrade,
+            'maxAreaFactor':self.maxAreaFactor,
             'explanation':self.explanation.content
         }
 
@@ -800,6 +852,7 @@ class ExcludesConstraintBlock(ConstraintBlock):
             'type':'excludes',
             'geometry':self.geometry.data,
             'padding':self.padding,
+            'percentOfGrade':self.percentOfGrade,
             'explanation':self.explanation.content
         }
 
@@ -854,10 +907,6 @@ class AnswerBlock(XBlock):
     color = String(help="the color of the polyline,polygon or marker", default="#FF0000", scope=Scope.content)
     type  = String(help="the type of the answer point|polygon|polyline|directed-polyline", default=None, scope=Scope.content)
     hintAfterAttempt= Integer(help="display hint button after N failed attempts", default=None, scope=Scope.content)
-#    padding = Integer(help="default padding distance (meters)", default=None, scope=Scope.content)
-
-    # since we are currently only allowing a single answer, the percentOfGrade will be 100%
-    percentOfGrade = Float(help="how much of overall grade is dependent on this answer", default=100, scope=Scope.content)
 
     def student_view(self, context=None):
         """no view"""
@@ -901,6 +950,13 @@ class AnswerBlock(XBlock):
             if isinstance(child, ConstraintsBlock):
                 return child.hintDisplayTime
         return None
+
+    def setScore(self, value, max_value):
+        self.runtime.publish(self, {
+            'event_type':'grade',
+            'value':value,
+            'max_value':max_value
+        })
 
     problem_view = student_view
 

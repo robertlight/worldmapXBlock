@@ -271,6 +271,7 @@ Ext.onReady(function() {
         MESSAGING.getInstance().registerHandler("flash-polygon", function(e) {
             var data = JSON.parse(e.message);
             var features = [];
+            var bounds = null;
             for( var i=0; i<data.length; i++ ) {
                 var points = [];
                 for( var j=0; j<data[i].length; j++ ) {
@@ -290,16 +291,25 @@ Ext.onReady(function() {
                        }
                     );
                 feature.state = OpenLayers.State.INSERT;
+                var b = ring.getBounds();
+                if( bounds != null ) {
+                    bounds.extend(b);
+                } else {
+                    bounds = b;
+                }
                 features.push(feature);
             }
 
-            app.mapPanel.map.setCenter([center.x, center.y]);
+            app.mapPanel.map.setCenter(
+                    [center.x, center.y],
+                    Math.min(15,app.mapPanel.map.getZoomForExtent( bounds, false))
+            );
             polygonLayer.addFeatures(features);
             polygonLayer.redraw();
             setTimeout( function() {
                 polygonLayer.removeFeatures(features);
                 polygonLayer.redraw();
-            },2000);
+            },3000);
 
         });
 
