@@ -183,17 +183,23 @@ class WorldMapXBlock(XBlock):
     @XBlock.json_handler
     def point_response(self, data, suffix=''):
 #        padding = data['answer']['padding']
-        correctPoint = data['answer']['constraints'][0]['geometry']
+        correctGeometry = data['answer']['constraints'][0]['geometry']
         padding = data['answer']['constraints'][0]['padding']
         userAnswer = data['point']
         latitude = userAnswer['lat']
         longitude= userAnswer['lon']
         #dLatitude= latitude - correctPoint['lat']
         #dLongitude=longitude - correctPoint['lon']
-        sinHalfDeltaLon = math.sin(math.pi * (correctPoint['lon']-longitude)/360)
-        sinHalfDeltaLat = math.sin(math.pi * (correctPoint['lat']-latitude)/360)
-        a = sinHalfDeltaLat * sinHalfDeltaLat + sinHalfDeltaLon*sinHalfDeltaLon * math.cos(math.pi*latitude/180)*math.cos(math.pi*correctPoint['lat']/180)
-        isHit = 2*self.SPHERICAL_DEFAULT_RADIUS*math.atan2(math.sqrt(a), math.sqrt(1-a)) < padding
+        isHit = True
+
+        if correctGeometry['type'] == 'polygon':
+            correctPolygon = makePolygon(correctGeometry['points']).buffer(padding*180/(math.pi*self.SPHERICAL_DEFAULT_RADIUS))
+            isHit = correctPolygon.contains(makePoint(userAnswer))
+        else:
+            sinHalfDeltaLon = math.sin(math.pi * (correctGeometry['lon']-longitude)/360)
+            sinHalfDeltaLat = math.sin(math.pi * (correctGeometry['lat']-latitude)/360)
+            a = sinHalfDeltaLat * sinHalfDeltaLat + sinHalfDeltaLon*sinHalfDeltaLon * math.cos(math.pi*latitude/180)*math.cos(math.pi*correctPoint['lat']/180)
+            isHit = 2*self.SPHERICAL_DEFAULT_RADIUS*math.atan2(math.sqrt(a), math.sqrt(1-a)) < padding
 
         correctExplanation = ""
         percentCorrect = 100
@@ -235,9 +241,17 @@ class WorldMapXBlock(XBlock):
                     constraintPolygon = makePolygon(constraint['geometry']['points'])
                     overage = answerPolygon.difference(constraintPolygon).area
                     percentMatch = constraint['percentMatch']
-                    constraintSatisfied = (overage*100/constraintPolygon.area < 1.5*(100-percentMatch)) \
-                          and (overage*100/answerPolygon.area < (100-percentMatch)) \
-                          and (constraintPolygon.difference(answerPolygon).area*100/constraintPolygon.area < (100-percentMatch))
+                    constraintSatisfied = (overage*100/constraintPolygon.area < 1.5*(100-percentMatch))
+                    if constraintSatisfied :
+                        constraintSatisfied = (overage*100/answerPolygon.area < (100-percentMatch))
+                        if constraintSatisfied :
+                            constraintSatisfied = (constraintPolygon.difference(answerPolygon).area*100/constraintPolygon.area < (100-percentMatch))
+                            if not constraintSatisfied :
+                                additionalErrorInfo = " (polygon didn't include enough of correct area)"
+                        else:
+                            additionalErrorInfo = " (polygon didn't include enough of correct area)"
+                    else:
+                        additionalErrorInfo = " (polygon too big)"
 
                 elif( constraint['type'] == 'includes' or constraint['type'] == 'excludes'):
                     if( constraint['geometry']['type'] == 'polygon' ):
@@ -531,7 +545,7 @@ class WorldMapXBlock(XBlock):
                            Draw a polygon around the esplanade
                        </explanation>
                        <constraints hintDisplayTime='-1'>
-                          <matches percentMatch='60' percentOfGrade="25"  padding='0'>
+                          <matches percentMatch='50' percentOfGrade="25"  padding='0'>
                              <polygon>
                                 <point lon="-71.07466790470745" lat="42.35719537593463"/>
                                 <point lon="-71.08492467197995" lat="42.35399231410341"/>
@@ -546,6 +560,28 @@ class WorldMapXBlock(XBlock):
                                 <B>Must</B> include the esplanade
                              </explanation>
                           </matches>
+                       </constraints>
+                    </answer>
+                    <answer id='esplanade2' color='00FFFF' type='point' hintAfterAttempt='2'>
+                       <explanation>
+                          Click on the esplanade
+                       </explanation>
+                       <constraints hintDisplayTime='-1'>
+                          <inside percentOfGrade="25"  padding='1'>
+                             <polygon>
+                                <point lon="-71.07466790470745" lat="42.35719537593463"/>
+                                <point lon="-71.08492467197995" lat="42.35399231410341"/>
+                                <point lon="-71.08543965611076" lat="42.35335802506911"/>
+                                <point lon="-71.08822915348655" lat="42.35250172471913"/>
+                                <point lon="-71.08814332279839" lat="42.352279719020736"/>
+                                <point lon="-71.08689877781501" lat="42.35253343975517"/>
+                                <point lon="-71.07411000523211" lat="42.355958569427614"/>
+                                <point lon="-71.07466790470745" lat="42.35719537593463"/>
+                             </polygon>
+                             <explanation>
+                                Click inside of the esplanade area
+                             </explanation>
+                          </inside>
                        </constraints>
                     </answer>
                     <worldmap href='http://23.21.172.243/maps/bostoncensus/embed?' debug='true' width='600' height='400' baseLayer='OpenLayers_Layer_Google_116'>
@@ -820,6 +856,20 @@ class MatchesConstraintBlock(ConstraintBlock):
         return {
             'type':'matches',
             'percentMatch':self.percentMatch,
+            'geometry':self.geometry.data,
+            'padding':self.padding,
+            'percentOfGrade':self.percentOfGrade,
+            'explanation':self.explanation.content
+        }
+
+class InsideOfConstraintBlock(ConstraintBlock):
+
+    has_children = True
+
+    @property
+    def data(self):
+        return {
+            'type':'inside',
             'geometry':self.geometry.data,
             'padding':self.padding,
             'percentOfGrade':self.percentOfGrade,

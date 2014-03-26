@@ -11,6 +11,7 @@ from .worldmap import WorldmapQuizBlock
 from .worldmap import AnswerBlock
 from .worldmap import ConstraintsBlock
 from .worldmap import MatchesConstraintBlock
+from .worldmap import InsideOfConstraintBlock
 from .worldmap import IncludesConstraintBlock
 from .worldmap import ExcludesConstraintBlock
 from .worldmap import PointBlock
