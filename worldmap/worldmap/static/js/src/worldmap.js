@@ -8,7 +8,7 @@ var WorldMapRegistry = Array();
 
 function WorldMapXBlock(runtime, element) {
 
-    WorldMapRegistry[ getUniqueId()] = { runtime: runtime, element: element};
+    WorldMapRegistry[ getUniqueId()] = { runtime: runtime, element: element };
 
     console.log("Initializing WorldMapXBlock "+$('.frame', element).attr('id'))
 
@@ -221,7 +221,7 @@ function WorldMapXBlock(runtime, element) {
                 url: runtime.handlerUrl(element, 'getExplanation'),
                 data: "null",
                 success: function(result) {
-                    $('.auxArea',element).html(result.replace(/highlight\(/g,"highlight('"+uniqId+"',"));
+                    $('.auxArea',element).html(result.replace(/highlight\(/g,"highlight('"+uniqId+"',").replace(/highlightLayer\(/g,"highlightLayer('"+uniqId+"',"));
                 }
             });
         }
@@ -344,13 +344,14 @@ function WorldMapXBlock(runtime, element) {
     }
 
     var layerVisibilityCache = [];
-    function selectLayer(select,layerid) {
+    function selectLayer(select,layerid,moveTo) {
         var uniqId = getUniqueId();
         var cachedValue = layerVisibilityCache[uniqId+layerid];
-        if( typeof cachedValue == "undefined" || cachedValue != select) {
-            var layer = {opacity:1.0, visibility:select};
+        if( moveTo == undefined ) moveTo = false;
+        if( typeof cachedValue == "undefined" || cachedValue != select || moveTo ) {
+            var layer = {opacity:1.0, visibility:select, moveTo: moveTo};
             var layerData = JSON.stringify(JSON.parse("{\""+layerid+"\":"+JSON.stringify(layer)+"}"));
-           // var layerData = JSON.parse('{"'+layerid+'": {"opacity":1.0, "visibility":"'+select+'}}');
+
             MESSAGING.getInstance().send(
                 uniqId,
                 new Message('setLayers', layerData)
@@ -499,6 +500,17 @@ function highlight(uniqId, id) {
             MESSAGING.getInstance().send(uniqId, new Message("highlight-geometry", result));
         }
     });
+    return false;
+}
+
+function highlightLayer(uniqId, layerid) {
+    var layer = {opacity:1.0, visibility:true, moveTo: true};
+    var layerData = JSON.stringify(JSON.parse("{\""+layerid+"\":"+JSON.stringify(layer)+"}"));
+
+    MESSAGING.getInstance().send(
+        uniqId,
+        new Message('setLayers', layerData)
+    )
     return false;
 }
 

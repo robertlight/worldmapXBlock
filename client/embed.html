@@ -213,7 +213,9 @@ Ext.onReady(function() {
 
         app.mapPanel.map.events.register("changelayer", app.mapPanel.map, function(e) {
             MESSAGING.getInstance().send(new Message("changelayer", {name: e.layer.name, id:e.layer.id, visibility:e.layer.visibility,opacity:e.layer.opacity, legendData: getLayerLegendInfo(app.config.map.layers, e.layer)}));
-        }); 
+        });
+
+
 //	app.mapPanel.map.events.register("changebaselayer", app.mapPanel.map, function(e) {
 //            console.log("changebaselayer event:   id: "+e.layer.id+"   name: "+e.layer.name);
 //        });
@@ -234,6 +236,10 @@ Ext.onReady(function() {
                    layer.setOpacity(data[id]['opacity']);
                    if( (ctrl.checked && !data[id]['visibility']) || (!ctrl.checked && data[id]['visibility']) ) {
                        ctrl.setChecked( data[id]['visibility']);
+                   }
+                   if( data[id]['moveTo'] ) {
+                       var zoom = app.mapPanel.map.getZoomForExtent(layer.maxExtent, true);
+                       app.mapPanel.map.setCenter(layer.maxExtent.getCenterLonLat(), zoom);
                    }
                } else {
                    console.log("ERROR: could not find layer for id: "+id);
