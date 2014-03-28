@@ -3,7 +3,12 @@
 /**
  * called once for each frag on the page
  */
+
+var WorldMapRegistry = Array();
+
 function WorldMapXBlock(runtime, element) {
+
+    WorldMapRegistry[ getUniqueId()] = { runtime: runtime, element: element};
 
     console.log("Initializing WorldMapXBlock "+$('.frame', element).attr('id'))
 
@@ -174,37 +179,52 @@ function WorldMapXBlock(runtime, element) {
              }
         });
 
+        if( $('.frame', element).attr('type') == "quiz" ) {
+            //********************** POINT & POLYGON TOOLS**************************
+            $.ajax({
+                 type: "POST",
+                 url: runtime.handlerUrl(element, 'getAnswers'),
+                 data: "null",
+                 success: function(result) {
+                    //window.alert(JSON.stringify(result));
+                    if( result != null ) {
+                        var html = "<ol>"+result.explanation;
+                        for(var i in result.answers) {
+                            //result.answers[i].padding = result.padding;  //TODO: should be done on xml read, not here!
+                            html += "<li><span id='answer-"+result.answers[i].id+"'><span>"+result.answers[i].explanation+"</span><br/><span class='"+result.answers[i].type+"-tool'/><span id='score-"+result.answers[i].id+"'/><div id='dialog-"+result.answers[i].id+"'/></span></li>";
+                        }
+                        html += "</ol>";
+                        $('.auxArea',element).html(html);
+                        for(var i in result.answers) {
+                            var tool = $('.auxArea',element).find('#answer-'+result.answers[i].id).find('.'+result.answers[i].type+'-tool');
+                            tool.css('background-color',result.answers[i].color);
+                            tool.click( result.answers[i], function(e) {
+                                MESSAGING.getInstance().sendAll( new Message("reset-answer-tool",null));
+                                MESSAGING.getInstance().send(
+                                    getUniqueId(),
+                                    new Message("set-answer-tool", e.data)
+                                );
+                            });
+                        }
+                    }
+                 },
+                 failure: function(){
+                     window.alert("getAnswers returned failure");
+                 }
+            });
+        } else if( $('.frame', element).attr('type') == "expository" ) {
 
-        //********************** POINT & POLYGON TOOLS**************************
-        $.ajax({
-             type: "POST",
-             url: runtime.handlerUrl(element, 'getAnswers'),
-             data: "null",
-             success: function(result) {
-                //window.alert(JSON.stringify(result));
-                if( result != null ) {
-                    var html = "<ol>"+result.explanation;
-                    for(var i in result.answers) {
-                        result.answers[i].padding = result.padding;  //TODO: should be done on xml read, not here!
-                        html += "<li><span id='answer-"+result.answers[i].id+"'><span>"+result.answers[i].explanation+"</span><br/><span class='"+result.answers[i].type+"-tool'/><span id='score-"+result.answers[i].id+"'/><div id='dialog-"+result.answers[i].id+"'/></span></li>";
-                    }
-                    html += "</ol>";
-                    $('.answerControls',element).html(html);
-                    for(var i in result.answers) {
-                        var tool = $('.answerControls',element).find('#answer-'+result.answers[i].id).find('.'+result.answers[i].type+'-tool');
-                        tool.css('background-color',result.answers[i].color);
-                        tool.click( result.answers[i], function(e) {
-                            MESSAGING.getInstance().sendAll( new Message("reset-answer-tool",null));
-                            MESSAGING.getInstance().send(
-                                getUniqueId(),
-                                new Message("set-answer-tool", e.data)
-                            );
-                        });
-                    }
+            var uniqId = getUniqueId();
+
+            $.ajax({
+                type: "POST",
+                url: runtime.handlerUrl(element, 'getExplanation'),
+                data: "null",
+                success: function(result) {
+                    $('.auxArea',element).html(result.replace(/highlight\(/g,"highlight('"+uniqId+"',"));
                 }
-             }
-        });
-
+            });
+        }
         //****************** LAYER CONTROLS ***************************
         $('.layerControls',element).dynatree({
             title: "LayerControls",
@@ -302,13 +322,14 @@ function WorldMapXBlock(runtime, element) {
                             var hintAfterAttempt = result.answer.hintAfterAttempt;
                             if( hintAfterAttempt != null ) {
                                 if( nAttempt % hintAfterAttempt == 0) {
-                                    HintManager.getInstance().initialize(runtime,element,getUniqueId());
+                                    var uniqId = getUniqueId();
                                     var html = "<ul>";
+                                    HintManager.getInstance().reset();
                                     for( var i=0;i<result.answer.constraints.length; i++) {
                                         var constraint = result.answer.constraints[i];
                                         if( !constraint.satisfied ) {
                                             HintManager.getInstance().addConstraint(i,constraint);
-                                            html += "<li>"+constraint.explanation+"<a href='#' onclick='HintManager.getInstance().flashHint("+i+")'>hint</a></li>";
+                                            html += "<li>"+constraint.explanation+"<a href='#' onclick='return HintManager.getInstance().flashHint(\""+uniqId+"\","+i+")'>hint</a></li>";
                                         }
                                     }
                                     html += "</ul>";
@@ -468,42 +489,55 @@ function WorldMapXBlock(runtime, element) {
 
 }
 
+function highlight(uniqId, id) {
+    var worldmapData = WorldMapRegistry[uniqId];
+    $.ajax({
+        type: "POST",
+        url: worldmapData.runtime.handlerUrl(worldmapData.element, 'getGeometry'),
+        data: JSON.stringify(id),
+        success: function(result) {
+            MESSAGING.getInstance().send(uniqId, new Message("highlight-geometry", result));
+        }
+    });
+    return false;
+}
+
+
+
 var HintManager = (function HintManagerSingleton() { // declare 'Singleton' as the return value of a self-executing anonymous function
     var _instance = null;
     var _constructor = function() {
-        this.element = undefined;
         this.constraints = [];
     };
     _constructor.prototype = { // *** prototypes will be "public" methods available to the instance
-        initialize: function( runtime, element, uniqId ) {
-            this.element = element;
-            this.runtime = runtime;
-            this.uniqId = uniqId;
+        reset: function() {
             this.constraints = [];
         },
         addConstraint: function(indx, constraint) {
            this.constraints[indx] = constraint;
 //            console.log("addConstraint["+this.constraints.length+"] = "+JSON.stringify(constraint));
         },
-        flashHint: function(indx) {
+        flashHint: function(uniqId, indx) {
             var _this = this;
             var type = _this.constraints[indx]['geometry']['type'];
             var geo = _this.constraints[indx]['geometry'];
             if( type == 'polygon' ) {
                 geo = _this.constraints[indx]['geometry']['points'];
             }
+            var worldmapData = WorldMapRegistry[uniqId];
             $.ajax({
                 type: "POST",
-                url: this.runtime.handlerUrl(_this.element,"getFuzzyGeometry"),
+                url: worldmapData.runtime.handlerUrl(worldmapData.element,"getFuzzyGeometry"),
                 data: JSON.stringify({
                     buffer: _this.constraints[indx]['padding'],
                     type: type,
                     geometry: geo
                 }),
                 success: function(result) {
-                    MESSAGING.getInstance().send(_this.uniqId, new Message("flash-polygon", result));
+                    MESSAGING.getInstance().send(uniqId, new Message("flash-polygon", result));
                 }
             })
+            return false;
         }
     };
     return {

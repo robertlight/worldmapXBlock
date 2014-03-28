@@ -5,9 +5,9 @@
         <td>&nbsp;</td>
         <td><div class="sliders-top"/></td>
         <td>&nbsp;</td>
-        <td width='300' rowspan="3">
-          <div class="layerControls" style="padding:20px;"></div>
-          <div class="answerControls" style="padding:20px;"></div>
+        <td width='*' rowspan="3" valign="top">
+          <div class="layerControls"></div>
+          <div class="auxArea"></div>
         </td>
 
     </tr>
@@ -15,6 +15,7 @@
       <td class="sliders-left" />
       <td>
         <iframe class='frame' id='worldmap_{self.scope_ids.usage_id}'
+         type='{self.worldmapType}'
          src="{self.href}xblockId=worldmap_{self.scope_ids.usage_id}"
          frameborder='0' width={self.width} height={self.height}
          debug="{self.debug}"

@@ -63,19 +63,14 @@ class WorldMapXBlock(XBlock):
     has_children = True
 
 
-    #@classmethod
-    #def parse_xml(cls, node, runtime, keys, id_generator):
-    #    """
-    #    Parse the XML for a checker. A few arguments are handled specially,
-    #    then the rest get the usual treatment.
-    #    """
-    #    block = runtime.construct_xblock_from_class(cls, keys)
-    #
-    #    # Find <script> children, turn them into script content.
-    #    for child in node:
-    #        block.runtime.add_node_as_child(block, child, id_generator)
-    #
-    #    return block
+    @property
+    def worldmapType(self):
+        if isinstance(self.get_parent(), WorldmapQuizBlock):
+            return "quiz"
+        elif isinstance(self.get_parent(), WorldmapExpositoryBlock):
+            return "expository"
+        else:
+            return "unknown"
 
     @property
     def sliders(self):
@@ -190,20 +185,20 @@ class WorldMapXBlock(XBlock):
         longitude= userAnswer['lon']
         #dLatitude= latitude - correctPoint['lat']
         #dLongitude=longitude - correctPoint['lon']
-        isHit = True
+        hit = True
 
         if correctGeometry['type'] == 'polygon':
             correctPolygon = makePolygon(correctGeometry['points']).buffer(padding*180/(math.pi*self.SPHERICAL_DEFAULT_RADIUS))
-            isHit = correctPolygon.contains(makePoint(userAnswer))
+            hit = correctPolygon.contains(makePoint(userAnswer))
         else:
             sinHalfDeltaLon = math.sin(math.pi * (correctGeometry['lon']-longitude)/360)
             sinHalfDeltaLat = math.sin(math.pi * (correctGeometry['lat']-latitude)/360)
-            a = sinHalfDeltaLat * sinHalfDeltaLat + sinHalfDeltaLon*sinHalfDeltaLon * math.cos(math.pi*latitude/180)*math.cos(math.pi*correctPoint['lat']/180)
-            isHit = 2*self.SPHERICAL_DEFAULT_RADIUS*math.atan2(math.sqrt(a), math.sqrt(1-a)) < padding
+            a = sinHalfDeltaLat * sinHalfDeltaLat + sinHalfDeltaLon*sinHalfDeltaLon * math.cos(math.pi*latitude/180)*math.cos(math.pi*correctGeometry['lat']/180)
+            hit = 2*self.SPHERICAL_DEFAULT_RADIUS*math.atan2(math.sqrt(a), math.sqrt(1-a)) < padding
 
         correctExplanation = ""
         percentCorrect = 100
-        if not isHit :
+        if not hit :
             correctExplanation = "incorrect location"
             percentCorrect = 0
 
@@ -214,7 +209,7 @@ class WorldMapXBlock(XBlock):
             'answer':data['answer'],
             'percentCorrect': percentCorrect,
             'correctExplanation': correctExplanation,
-            'isHit': isHit
+            'isHit': hit
         }
 
     @XBlock.json_handler
@@ -319,6 +314,14 @@ class WorldMapXBlock(XBlock):
         return None
 
     @XBlock.json_handler
+    def getGeometry(self, data, suffix=''):
+        g = self.get_parent().getGeometry(data)
+        if g != None :
+            return g.data
+        else:
+            return None
+
+    @XBlock.json_handler
     def getFuzzyGeometry(self, data, suffix=''):
         buffer = data['buffer']*180./(self.SPHERICAL_DEFAULT_RADIUS*math.pi)
 
@@ -362,6 +365,9 @@ class WorldMapXBlock(XBlock):
 
         return result
 
+    @XBlock.json_handler
+    def getExplanation(self,data,suffix=''):
+        return self.get_parent().explanation.content
 
 
     @XBlock.json_handler
@@ -443,6 +449,64 @@ class WorldMapXBlock(XBlock):
             ("WorldMapXBlock",
              """
              <vertical_demo>
+                <worldmap-expository>
+                    <worldmap href='http://23.21.172.243/maps/bostoncensus/embed?' debug='true' width='600' height='400' baseLayer='OpenLayers_Layer_Google_116'>
+                       <layers>
+                          <layer id="geonode:qing_charity_v1_mzg"/>
+                          <layer id="OpenLayers_Layer_WMS_122">
+                          </layer>
+                          <layer id="OpenLayers_Layer_WMS_124">
+                          </layer>
+                          <layer id="OpenLayers_Layer_WMS_120">
+                          </layer>
+                          <layer id="OpenLayers_Layer_WMS_118">
+                          </layer>
+                          <layer id="OpenLayers_Layer_Vector_132">
+                          </layer>
+                       </layers>
+                    </worldmap>
+                    <explanation>
+                          Lorem ipsum dolor sit amet, <a href='#' onclick='return highlight(\"backbay\")'>Back Bay</a> adipiscing elit. Aliquam a neque diam . Cras ac erat nisi. Etiam aliquet ultricies lobortis <a href='#' onclick='return highlight(\"esplanade\")'>Esplanade</a>. Etiam lacinia malesuada leo, pretium egestas mauris suscipit at. Fusce ante mi, faucibus a purus quis, commodo accumsan ipsum. Morbi vitae ultrices nibh. Quisque quis dolor elementum sem mollis pharetra vitae quis magna. Duis auctor pretium ligula a eleifend.
+                          <p/>Curabitur sem diam, congue sed vehicula vitae  <a href='#' onclick='return highlight(\"bay-village\")'>Bay Village</a>, lobortis pulvinar odio. Phasellus ac lacus sapien. Nam nec tempus metus, sit amet ullamcorper tellus. Nullam ac nibh semper felis vulputate elementum eget in ligula. Integer semper pharetra orci, et tempor orci commodo a. Duis id faucibus felis. Maecenas bibendum accumsan nisi, ut semper quam elementum quis. Donec erat libero, pretium sollicitudin augue a, suscipit mollis libero. Mauris aliquet sem eu ligula rutrum imperdiet. Proin quis velit congue, fermentum ligula vitae, eleifend nisi. Sed justo est, egestas id nisl non, fringilla vulputate orci. Ut non nisl vitae lectus tincidunt sollicitudin. Donec ornare purus eu dictum sollicitudin. Aliquam erat volutpat.
+                          <p/>Vestibulum ante ipsum primis in faucibus orci luctus et <a href='#' onclick='return highlight(\"big-island\")'>Big Island</a>ultrices posuere cubilia Curae; Quisque purus dolor, fermentum eu vestibulum nec, ultricies semper tellus. Vivamus nunc mi, fermentum a commodo vel, iaculis in odio. Vivamus commodo mi convallis, congue magna eget, sodales sem. Morbi facilisis nunc vitae porta elementum. Praesent auctor vitae nisi a pharetra. Mauris non urna auctor nunc dignissim mollis. In sem ipsum, porta sit amet dignissim ut, adipiscing eu dui. Nam sodales nisi quis urna malesuada, quis aliquet ipsum placerat.
+
+                    </explanation>
+                    <polygon id='backbay'>
+                         <point lon="-71.09350774082822" lat="42.35148683512319"/>
+                         <point lon="-71.09275672230382" lat="42.34706235935522"/>
+                         <point lon="-71.08775708470029" lat="42.3471733715164"/>
+                         <point lon="-71.08567569050435" lat="42.34328782922443"/>
+                         <point lon="-71.08329388889936" lat="42.34140047917672"/>
+                         <point lon="-71.07614848408352" lat="42.347379536438645"/>
+                         <point lon="-71.07640597614892" lat="42.3480456031057"/>
+                         <point lon="-71.0728225449051"  lat="42.34785529906382"/>
+                         <point lon="-71.07200715336435" lat="42.34863237027516"/>
+                         <point lon="-71.07228610310248" lat="42.34942529018035"/>
+                         <point lon="-71.07011887821837" lat="42.35004376076278"/>
+                         <point lon="-71.0708055237264"  lat="42.351835705270716"/>
+                         <point lon="-71.07325169834775" lat="42.35616470553563"/>
+                         <point lon="-71.07408854756031" lat="42.35600613935877"/>
+                         <point lon="-71.07483956608469" lat="42.357131950552244"/>
+                         <point lon="-71.09331462177917" lat="42.35166127043902"/>
+                    </polygon>
+                    <polygon id='esplanade'>
+                        <point lon="-71.07466790470745" lat="42.35719537593463"/>
+                        <point lon="-71.08492467197995" lat="42.35399231410341"/>
+                        <point lon="-71.08543965611076" lat="42.35335802506911"/>
+                        <point lon="-71.08822915348655" lat="42.35250172471913"/>
+                        <point lon="-71.08814332279839" lat="42.352279719020736"/>
+                        <point lon="-71.08689877781501" lat="42.35253343975517"/>
+                        <point lon="-71.07411000523211" lat="42.355958569427614"/>
+                        <point lon="-71.07466790470745" lat="42.35719537593463"/>
+                    </polygon>
+                    <polygon id="bay-village">
+                       <point lon="-71.06994721684204" lat="42.349520439895464"/>
+                       <point lon="-71.0687455872032" lat="42.34856893624958"/>
+                       <point lon="-71.07140633854628" lat="42.34863237027384"/>
+                    </polygon>
+                    <point id="big-island" lon="-70.9657058456866" lat="42.32011232390349"/>
+                </worldmap-expository>
+
                 <worldmap-quiz>
                     <explanation>
                          <B>A quiz about the Boston area</B>
@@ -658,6 +722,110 @@ class WorldMapXBlock(XBlock):
                         </sliders>
                     </worldmap>
                 </worldmap-quiz>
+                <worldmap-quiz>
+                    <explanation>
+                         <B>A quiz about the Boston area</B>
+                    </explanation>
+                    <answer id='foobar' color='00FF00' type='point' hintAfterAttempt='3'>
+                       <explanation>
+                          Where is the biggest island in Boston harbor?
+                       </explanation>
+                       <constraints>
+                          <matches percentOfGrade="25" percentMatch="100" padding='1000'>
+                              <point lon="-70.9657058456866" lat="42.32011232390349"/>
+                              <explanation>
+                                 <B> Look at boston harbor - pick the biggest island </B>
+                              </explanation>
+                          </matches>
+                       </constraints>
+                    </answer>
+                    <answer id='baz' color='0000FF' type='polygon' hintAfterAttempt='2'>
+                       <explanation>
+                          Draw a polygon around the land bridge that formed Nahant bay?
+                       </explanation>
+                       <constraints>
+                          <includes percentOfGrade="25" padding='500' maxAreaFactor='15'>
+                              <point lon="-70.93824002537393" lat="42.445896458204764"/>
+                              <explanation>
+                                 <B>Hint:</B> Look for Nahant Bay on the map
+                              </explanation>
+                          </includes>
+                       </constraints>
+                    </answer>
+                    <worldmap href='http://23.21.172.243/maps/bostoncensus/embed?' debug='true' width='600' height='400' baseLayer='OpenLayers_Layer_Google_116'>
+                       <layers>
+                          <layer id="geonode:qing_charity_v1_mzg"/>
+                          <layer id="OpenLayers_Layer_WMS_122">
+                             <param name="CensusYear" value="1972"/>
+                          </layer>
+                          <layer id="OpenLayers_Layer_WMS_124">
+                             <param name="CensusYear" min="1973" max="1977"/>
+                          </layer>
+                          <layer id="OpenLayers_Layer_WMS_120">
+                             <param name="CensusYear" value="1976"/>
+                          </layer>
+                          <layer id="OpenLayers_Layer_WMS_118">
+                             <param name="CensusYear" value="1978"/>
+                          </layer>
+                          <layer id="OpenLayers_Layer_Vector_132">
+                             <param name="CensusYear" value="1980"/>
+                          </layer>
+                       </layers>
+                       <group-control name="Census Data" visible="true">
+                          <layer-control layerid="OpenLayers_Layer_WMS_120" visible="true" name="layer0"/>
+                          <layer-control layerid="OpenLayers_Layer_WMS_122" visible="true" name="layerA"/>
+                          <layer-control layerid="OpenLayers_Layer_WMS_124" visible="true" name="layerB"/>
+                          <layer-control layerid="OpenLayers_Layer_WMS_120" visible="false" name="layerC"/>
+                          <layer-control layerid="OpenLayers_Layer_WMS_118" visible="true" name="layerE"/>
+                          <layer-control layerid="OpenLayers_Layer_Vector_132" visible="true" name="layerF"/>
+                          <group-control name="A sub group of layers">
+                             <group-control name="A sub-sub-group">
+                                <layer-control layerid="OpenLayers_Layer_WMS_118" visible="true" name="layerE.1"/>
+                                <layer-control layerid="OpenLayers_Layer_Vector_132" visible="true" name="layerF.1"/>
+                             </group-control>
+                             <group-control name="another sub-sub-group" visible="false">
+                                <layer-control layerid="OpenLayers_Layer_WMS_118" visible="true" name="layerE.2"/>
+                                <layer-control layerid="OpenLayers_Layer_Vector_132" visible="true" name="layerF.2"/>
+                             </group-control>
+                             <layer-control layerid="OpenLayers_Layer_WMS_122" visible="true" name="layerA.1"/>
+                             <layer-control layerid="OpenLayers_Layer_WMS_124" visible="true" name="layerB.1"/>
+                          </group-control>
+                       </group-control>
+
+                       <sliders>
+                          <slider id="timeSlider" title="A" param="CensusYear" min="1972" max="1980" increment="0.2" position="left"/>
+                          <slider id="timeSlider7" title="Abcdefg" param="CensusYear" min="1972" max="1980" increment="0.2" position="left"/>
+                          <slider id="timeSlider2" title="B" param="CensusYear" min="1972" max="1980" increment="0.2" position="right">
+                             <help>
+                                <B>ABC</B><br/>
+                                <i>yippity doo dah</i>
+                             </help>
+                          </slider>
+                          <slider id="timeSlider6" title="Now is the time for" param="CensusYear" min="1972" max="1980" increment="0.2" position="right">
+                             <help>
+                                 <B>This can be any html</B><br/>
+                                 <i>you can use to create help info for using the slider</i><br/>
+                                 <b>You can even include images:</b>
+                                 <img src="http://static.adzerk.net/Advertisers/bc85dff2b3dc44ddb9650e1659b1ad1e.png"/>
+                             </help>
+                          </slider>
+                          <slider id="timeSlider3" title="Hello world" param="CensusYear" min="1972" max="1980" increment="0.2" position="top"/>
+                          <slider id="timeSlider8" title="Hello world12345" param="CensusYear" min="1972" max="1980" increment="0.2" position="top"/>
+                          <slider id="timeSlider4" title="Now is the time for all good men" param="CensusYear" min="1972" max="1980" increment="0.2" position="bottom"/>
+                          <slider id="timeSlider5" title="to come to the aid of their country" param="CensusYear" min="1972" max="1980" increment="0.2" position="bottom">
+                             <help>
+                                 <B>This is some generalized html</B><br/>
+                                 <i>you can use to create help info for using the slider</i>
+                                 <ul>
+                                    <li>You can explain what it does</li>
+                                    <li>How to interpret things</li>
+                                    <li>What other things you might be able to do</li>
+                                 </ul>
+                             </help>
+                          </slider>
+                        </sliders>
+                    </worldmap>
+                </worldmap-quiz>
               """
               #<worldmap-quiz padding='10'>
               #    <worldmap name='worldmap' href='http://worldmap.harvard.edu/maps/chinaX/embed?' width='800' height='600' testLatitude='16.775800549402906' testLongitude='-3.0166396836062104' testRadius='10000' debug="true">
@@ -761,7 +929,7 @@ class WorldMapXBlock(XBlock):
 #******************************************************************************************************
 # ASSESSMENT CLASSES
 #******************************************************************************************************
-class WorldmapQuizBlock(XBlock):
+class WorldmapExpositoryBlock(XBlock):
 
     has_children = True
 
@@ -789,6 +957,28 @@ class WorldmapQuizBlock(XBlock):
         return None
 
     @property
+    def explanation(self):
+        for child_id in self.children:  # pylint: disable=E1101
+            child = self.runtime.get_block(child_id)
+            if isinstance(child, HelpBlock):
+                return child
+        return None
+
+    def getGeometry(self, id):
+        for child_id in self.children:  # pylint: disable=E1101
+            child = self.runtime.get_block(child_id)
+            if isinstance(child, GeometryBlock) and child.id == id:
+                return child
+        return None
+
+    problem_view = student_view
+
+class WorldmapQuizBlock(WorldmapExpositoryBlock):
+
+    has_children = True
+
+
+    @property
     def answers(self):
         answers = []
         for child_id in self.children:  # pylint: disable=E1101
@@ -796,14 +986,6 @@ class WorldmapQuizBlock(XBlock):
             if isinstance(child, AnswerBlock):
                 answers.append(child)
         return answers
-
-    @property
-    def explanation(self):
-        for child_id in self.children:  # pylint: disable=E1101
-            child = self.runtime.get_block(child_id)
-            if isinstance(child, HelpBlock):
-                return child
-        return None
 
     def setScore(self, answerId, value, max_value):
         for child_id in self.children:  # pylint: disable=E1101
@@ -813,7 +995,6 @@ class WorldmapQuizBlock(XBlock):
                 return
         raise "Answer not found for id="+answerId
 
-    problem_view = student_view
 
 class ConstraintBlock(XBlock):
 
@@ -910,11 +1091,16 @@ class ExcludesConstraintBlock(ConstraintBlock):
 class GeometryBlock(XBlock):
 
     has_children = True
+    id = String(help="string id of geometry", default=None)
 
 class PointBlock(GeometryBlock):
 
     lat = Float(help="latitude", default=None, scope=Scope.content)
     lon = Float(help="longitude",default=None, scope=Scope.content)
+
+    def student_view(self, context=None):
+        """no view"""
+        pass
 
     @property
     def data(self):
@@ -927,6 +1113,10 @@ class PointBlock(GeometryBlock):
 class PolygonBlock(GeometryBlock):
 
     has_children = True
+
+    def student_view(self, context=None):
+        """no view"""
+        pass
 
     @property
     def points(self):
