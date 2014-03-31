@@ -194,7 +194,7 @@ function WorldMapXBlock(runtime, element) {
                             html += "<li><span id='answer-"+result.answers[i].id+"'><span>"+result.answers[i].explanation+"</span><br/><span class='"+result.answers[i].type+"-tool'/><span id='score-"+result.answers[i].id+"'/><div id='dialog-"+result.answers[i].id+"'/></span></li>";
                         }
                         html += "</ol>";
-                        $('.auxArea',element).html(html);
+                        $('.auxArea',element).html(addUniqIdToArguments(getUniqueId(), html));
                         for(var i in result.answers) {
                             var tool = $('.auxArea',element).find('#answer-'+result.answers[i].id).find('.'+result.answers[i].type+'-tool');
                             tool.css('background-color',result.answers[i].color);
@@ -221,7 +221,7 @@ function WorldMapXBlock(runtime, element) {
                 url: runtime.handlerUrl(element, 'getExplanation'),
                 data: "null",
                 success: function(result) {
-                    $('.auxArea',element).html(result.replace(/highlight\(/g,"highlight('"+uniqId+"',").replace(/highlightLayer\(/g,"highlightLayer('"+uniqId+"',"));
+                    $('.auxArea',element).html(addUniqIdToArguments(getUniqueId(), result));
                 }
             });
         }
@@ -490,26 +490,30 @@ function WorldMapXBlock(runtime, element) {
 
 }
 
-function highlight(uniqId, id) {
+function addUniqIdToArguments( uniqId, str) {
+    return str.replace(/highlight\(/g,"highlight('"+uniqId+"',").replace(/highlightLayer\(/g,"highlightLayer('"+uniqId+"',")
+}
+
+function highlight(uniqId, id, relativeZoom) {
+    var relZoom = relativeZoom == undefined ? 0 : relativeZoom;
     var worldmapData = WorldMapRegistry[uniqId];
     $.ajax({
         type: "POST",
         url: worldmapData.runtime.handlerUrl(worldmapData.element, 'getGeometry'),
         data: JSON.stringify(id),
         success: function(result) {
+            result['relativeZoom'] = relZoom;
             MESSAGING.getInstance().send(uniqId, new Message("highlight-geometry", result));
         }
     });
     return false;
 }
 
-function highlightLayer(uniqId, layerid) {
-    var layer = {opacity:1.0, visibility:true, moveTo: true};
-    var layerData = JSON.stringify(JSON.parse("{\""+layerid+"\":"+JSON.stringify(layer)+"}"));
-
+function highlightLayer(uniqId, layerid, relativeZoom) {
+    var relZoom = relativeZoom == undefined ? 0 : relativeZoom;
     MESSAGING.getInstance().send(
         uniqId,
-        new Message('setLayers', layerData)
+        new Message('highlight-layer', JSON.stringify({layer: layerid, relativeZoom:relZoom}))
     )
     return false;
 }

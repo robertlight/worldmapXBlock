@@ -237,14 +237,27 @@ Ext.onReady(function() {
                    if( (ctrl.checked && !data[id]['visibility']) || (!ctrl.checked && data[id]['visibility']) ) {
                        ctrl.setChecked( data[id]['visibility']);
                    }
-                   if( data[id]['moveTo'] ) {
-                       var zoom = app.mapPanel.map.getZoomForExtent(layer.maxExtent, true);
-                       app.mapPanel.map.setCenter(layer.maxExtent.getCenterLonLat(), zoom);
-                   }
                } else {
                    console.log("ERROR: could not find layer for id: "+id);
                }
             }
+        });
+        MESSAGING.getInstance().registerHandler("highlight-layer",function(m) {
+            var data = JSON.parse(m.getMessage());
+           var layer = app.mapPanel.map.getLayer(data['layer']);
+           if( layer != null ) {
+               var ctrl = Ext.getCmp("layer_menu_" + data['layer']);
+               if( !ctrl.checked ) {
+                   ctrl.setChecked( true );
+               }
+               var zoom = app.mapPanel.map.getZoomForExtent(layer.maxExtent, true) + data['relativeZoom'];
+               app.mapPanel.map.setCenter(layer.maxExtent.getCenterLonLat(), zoom);
+               setTimeout( function() {
+                   ctrl.setChecked( false );
+               },6000);
+           } else {
+               console.log("ERROR: could not find layer for id: "+id);
+           }
         });
 
         var markerControl = new CLICK_CONTROL();
@@ -323,7 +336,7 @@ Ext.onReady(function() {
             var data = JSON.parse(e.message);
             var type = data['type'];
             var features = [];
-
+            var relativeZoom = data['relativeZoom'] == undefined ? 0 : data['relativeZoom'];
             var bounds = null;
             if( type == 'polygon' ) {
                 var points = [];
@@ -348,7 +361,7 @@ Ext.onReady(function() {
                 features.push(feature);
                 app.mapPanel.map.setCenter(
                         [center.x, center.y],
-                        Math.min(15,app.mapPanel.map.getZoomForExtent( bounds, false))
+                        Math.min(15, relativeZoom + app.mapPanel.map.getZoomForExtent( bounds, false))
                 );
                 polygonLayer.addFeatures(features);
                 polygonLayer.redraw();
@@ -362,7 +375,7 @@ Ext.onReady(function() {
                 var offset = new OpenLayers.Pixel(-size.w/2, -size.h);
                 var xy = transformToXY(data);
                 var icon = new OpenLayers.Icon('http://www.openlayers.org/dev/img/marker.png',size,offset);
-                app.mapPanel.map.setCenter( [xy.x, xy.y], 11);
+                app.mapPanel.map.setCenter( [xy.x, xy.y], 11+relativeZoom);
                 marker = new OpenLayers.Marker({lon:xy.x,lat:xy.y},icon);
                 markerLayer.addMarker(marker);
                 setTimeout( function() {

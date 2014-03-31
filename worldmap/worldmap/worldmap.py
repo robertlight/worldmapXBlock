@@ -466,8 +466,8 @@ class WorldMapXBlock(XBlock):
                        </layers>
                     </worldmap>
                     <explanation>
-                          Lorem ipsum dolor sit amet, <a href='#' onclick='return highlight(\"backbay\")'>Back Bay</a> adipiscing elit. Aliquam a neque diam . Cras ac erat nisi. Etiam aliquet ultricies lobortis <a href='#' onclick='return highlight(\"esplanade\")'>Esplanade</a>. Etiam lacinia malesuada leo, pretium egestas mauris suscipit at. Fusce ante mi, faucibus a purus quis, commodo accumsan ipsum. Morbi vitae ultrices nibh. Quisque quis dolor elementum sem mollis pharetra vitae quis magna. Duis auctor pretium ligula a eleifend.
-                          <p/>Curabitur sem <a href='#' onclick='return highlightLayer(\"OpenLayers_Layer_WMS_124\")'>layer diam</a>, congue sed vehicula vitae  <a href='#' onclick='return highlight(\"bay-village\")'>Bay Village</a>, lobortis pulvinar odio. Phasellus ac lacus sapien. Nam nec tempus metus, sit amet ullamcorper tellus. Nullam ac nibh semper felis vulputate elementum eget in ligula. Integer semper pharetra orci, et tempor orci commodo a. Duis id faucibus felis. Maecenas bibendum accumsan nisi, ut semper quam elementum quis. Donec erat libero, pretium sollicitudin augue a, suscipit mollis libero. Mauris aliquet sem eu ligula rutrum imperdiet. Proin quis velit congue, fermentum ligula vitae, eleifend nisi. Sed justo est, egestas id nisl non, fringilla vulputate orci. Ut non nisl vitae lectus tincidunt sollicitudin. Donec ornare purus eu dictum sollicitudin. Aliquam erat volutpat.
+                          Lorem ipsum dolor sit amet, <a href='#' onclick='return highlight(\"backbay\",-2)'>Back Bay</a> adipiscing elit. Aliquam a neque diam . Cras ac erat nisi. Etiam aliquet ultricies lobortis <a href='#' onclick='return highlight(\"esplanade\")'>Esplanade</a>. Etiam lacinia malesuada leo, pretium egestas mauris suscipit at. Fusce ante mi, faucibus a purus quis, commodo accumsan ipsum. Morbi vitae ultrices nibh. Quisque quis dolor elementum sem mollis pharetra vitae quis magna. Duis auctor pretium ligula a eleifend.
+                          <p/>Curabitur sem <a href='#' onclick='return highlightLayer(\"OpenLayers_Layer_WMS_124\",-2)'>layer diam</a>, congue sed vehicula vitae  <a href='#' onclick='return highlight(\"bay-village\", -5)'>Bay Village</a>, lobortis pulvinar odio. Phasellus ac lacus sapien. Nam nec tempus metus, sit amet ullamcorper tellus. Nullam ac nibh semper felis vulputate elementum eget in ligula. Integer semper pharetra orci, et tempor orci commodo a. Duis id faucibus felis. Maecenas bibendum accumsan nisi, ut semper quam elementum quis. Donec erat libero, pretium sollicitudin augue a, suscipit mollis libero. Mauris aliquet sem eu ligula rutrum imperdiet. Proin quis velit congue, fermentum ligula vitae, eleifend nisi. Sed justo est, egestas id nisl non, fringilla vulputate orci. Ut non nisl vitae lectus tincidunt sollicitudin. Donec ornare purus eu dictum sollicitudin. Aliquam erat volutpat.
                           <p/>Vestibulum ante ipsum primis in faucibus orci luctus et <a href='#' onclick='return highlight(\"big-island\")'>Big Island</a>ultrices posuere cubilia Curae; Quisque purus dolor, fermentum eu vestibulum nec, ultricies semper tellus. Vivamus nunc mi, fermentum a commodo vel, iaculis in odio. Vivamus commodo mi convallis, congue magna eget, sodales sem. Morbi facilisis nunc vitae porta elementum. Praesent auctor vitae nisi a pharetra. Mauris non urna auctor nunc dignissim mollis. In sem ipsum, porta sit amet dignissim ut, adipiscing eu dui. Nam sodales nisi quis urna malesuada, quis aliquet ipsum placerat.
 
                     </explanation>
@@ -509,8 +509,26 @@ class WorldMapXBlock(XBlock):
 
                 <worldmap-quiz>
                     <explanation>
-                         <B>A quiz about the Boston area</B>
+                         A quiz about the Boston area... particularly <B><a href='#' onclick='return highlight(\"backbay\",-2)'>Back Bay</a></B>
                     </explanation>
+                    <polygon id='backbay'>
+                         <point lon="-71.09350774082822" lat="42.35148683512319"/>
+                         <point lon="-71.09275672230382" lat="42.34706235935522"/>
+                         <point lon="-71.08775708470029" lat="42.3471733715164"/>
+                         <point lon="-71.08567569050435" lat="42.34328782922443"/>
+                         <point lon="-71.08329388889936" lat="42.34140047917672"/>
+                         <point lon="-71.07614848408352" lat="42.347379536438645"/>
+                         <point lon="-71.07640597614892" lat="42.3480456031057"/>
+                         <point lon="-71.0728225449051"  lat="42.34785529906382"/>
+                         <point lon="-71.07200715336435" lat="42.34863237027516"/>
+                         <point lon="-71.07228610310248" lat="42.34942529018035"/>
+                         <point lon="-71.07011887821837" lat="42.35004376076278"/>
+                         <point lon="-71.0708055237264"  lat="42.351835705270716"/>
+                         <point lon="-71.07325169834775" lat="42.35616470553563"/>
+                         <point lon="-71.07408854756031" lat="42.35600613935877"/>
+                         <point lon="-71.07483956608469" lat="42.357131950552244"/>
+                         <point lon="-71.09331462177917" lat="42.35166127043902"/>
+                    </polygon>
                     <answer id='foobar' color='00FF00' type='point' hintAfterAttempt='3'>
                        <explanation>
                           Where is the biggest island in Boston harbor?
