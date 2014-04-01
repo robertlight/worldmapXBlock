@@ -73,7 +73,7 @@ var MESSAGING = (function Messaging() { // declare 'Singleton' as the return val
                           var msg = new Message(data.type, JSON.parse(data.message)); //data.message is a JSON string
                           this.handlers[data.type]( msg );
                        } catch (e) {
-                          console.log("ERROR:  Failed to handle message - "+e);
+                          console.log("ERROR:  Failed to handle message - "+e+"\n"+ e.stack);
                        }
                     } else {
                        console.log("ERROR:  Message ignored by slave - no handler for message type="+data.type);

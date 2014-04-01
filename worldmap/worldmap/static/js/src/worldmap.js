@@ -37,16 +37,10 @@ function WorldMapXBlock(runtime, element) {
              }
         });
 
-        selectLayer(true,$('.frame',element).attr("baseLayer"));
+        if( $('.frame',element).attr("baseLayer") != undefined ) {
+            selectLayer(true,$('.frame',element).attr("baseLayer"));
+        }
 
-//        if( $('.layerData',element).text() != "{}" ) {
-//           MESSAGING.getInstance().send(
-//               getUniqueId(),
-//               new Message("setLayers", $('.layerData',element).text())
-//           );
-//        } else {
-//           console.log("no setLayers message sent, DOM info: "+$('.layerData',element).text());
-//        }
 
 
         $.ajax({
@@ -278,25 +272,13 @@ function WorldMapXBlock(runtime, element) {
 
         MESSAGING.getInstance().addHandler(getUniqueId(),"point_response", responseHandler );
         MESSAGING.getInstance().addHandler(getUniqueId(),"polygon_response", responseHandler);
+        MESSAGING.getInstance().addHandler(getUniqueId(),"polyline_response", responseHandler);
     });
 
-//    function flashHint(type, buffer, g) {
-//        alert("flashHint called");
-//        $.ajax({
-//            type: "POST",
-//            url: runtime.handlerUrl(element,"getFuzzyGeometry"),
-//            data: JSON.stringify({
-//                buffer: buffer,
-//                type: type,
-//                geometry: g
-//            }),
-//            success: function(result) {
-//                MESSAGING.getInstance().send(getUniqueId(), new Message("flash-polygon", result));
-//            }
-//        })
-//    }
+
     function responseHandler(m) {
         var data = JSON.parse(JSON.parse(m.message));
+
         $.ajax({
             type: "POST",
             url: runtime.handlerUrl(element, m.type),
@@ -305,7 +287,8 @@ function WorldMapXBlock(runtime, element) {
                 if( !result ) {
                     console.log("Failed to test "+ m.type+" for map: "+$('.frame', el).attr('id'));
                 } else {  //TODO: Fix url to point to local image
-                    var div = $('#score-'+result.answer.id);
+                    var worldmap_block = $('#'+getUniqueId()).closest('div[class="worldmap_block"]');
+                    var div = $(worldmap_block).find('#score-'+result.answer.id);
                     if( result.isHit ) {
                         div.html("<img src='/resource/equality_demo/public/images/correct-icon.png'/>");
                         MESSAGING.getInstance().sendAll( new Message("reset-answer-tool",null));

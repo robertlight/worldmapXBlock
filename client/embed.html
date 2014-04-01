@@ -3,7 +3,6 @@
 {% block title %} {% trans "Map Viewer" %} - {{ block.super }} {% endblock %}
 
 {% block head %}
-   <link rel="stylesheet" type="text/css" href="http://dev.sencha.com/deploy/ext-3.4.0/examples/shared/examples.css" />
 {% include "geonode/ext_header.html" %}
 {% include "geonode/app_header.html" %}
 {% include "geonode/geo_header.html" %}
@@ -17,13 +16,13 @@
 <script type="text/javascript">
     google.load("earth", "1");
 </script>
-<script src="http://dev.sencha.com/deploy/ext-3.4.0/examples/shared/examples.js"></script>
 
 <script type="text/javascript">
 var app;
 var markerLayer, polygonLayer;
 var markers = new Array();
 var polygons= new Array();
+var polylines=new Array();
 
 var currentAnswer = null;  //what we're currently searching for with the currently selected tool
 
@@ -160,6 +159,13 @@ Ext.onReady(function() {
                 fillOpacity: 0.3
             })
         });
+        var polylineLayer = new OpenLayers.Layer.Vector("worldmap-polyline", {
+            styleMap: new OpenLayers.StyleMap({
+                strokeColor: "#000000",
+                strokeOpacity: 1.0,
+                strokeWidth: 3
+            })
+        });
 
         var polygonControl =
             new OpenLayers.Control.DrawFeature(polygonLayer, OpenLayers.Handler.Polygon, {
@@ -200,7 +206,47 @@ Ext.onReady(function() {
                 }
             });
 
-        app.mapPanel.map.addLayers([markerLayer,polygonLayer]);
+        var polylineControl =
+            new OpenLayers.Control.DrawFeature(polylineLayer, OpenLayers.Handler.Path, {
+                doubleTouchTolerance: 50,
+                callbacks: {
+                    done: function(geo) {
+                       var polyline = [];
+                       for( var i=0;i<geo.components.length; i++) {
+                           var point = transformToLonLat({lon: geo.components[i].x, lat:geo.components[i].y});
+                           polyline.push({lon: point.x, lat: point.y});
+                       }
+
+                       MESSAGING.getInstance().send(
+                           new Message("polyline_response",
+                               {
+                                   polyline: polyline,
+                                   answer: currentAnswer
+                               }
+                           )
+                       );
+
+                       var feature = new OpenLayers.Feature.Vector(geo,{},{
+                           strokeColor: '#'+currentAnswer.color,
+                           strokeOpacity: 1,
+                           strokeWidth: 3
+                       });
+                       var proceed = this.events.triggerEvent( "sketchcomplete", {feature:feature});
+                       if( proceed !== false ) {
+                          feature.state = OpenLayers.State.INSERT;
+                          if( polylines[currentAnswer.id] ) {
+                             polylineLayer.removeFeatures([polylines[currentAnswer.id]]);
+                          }
+                          polylines[currentAnswer.id] = feature;
+                          polylineLayer.addFeatures([feature]);
+                          this.featureAdded(feature);
+                          this.events.triggerEvent("featureadded",{feature:feature});
+                       }
+                    }
+                }
+            });
+
+        app.mapPanel.map.addLayers([markerLayer,polygonLayer,polylineLayer]);
 
         app.mapPanel.map.events.register("moveend", app.mapPanel, function(){
             // calculate lat/lon
@@ -263,10 +309,12 @@ Ext.onReady(function() {
         var markerControl = new CLICK_CONTROL();
         app.mapPanel.map.addControl(markerControl);
         app.mapPanel.map.addControl(polygonControl);
+        app.mapPanel.map.addControl(polylineControl);
 
         MESSAGING.getInstance().registerHandler("reset-answer-tool", function(m) {
            markerControl.deactivate();
            polygonControl.deactivate();
+           polylineControl.deactivate();
            currentAnswer = null;
         });
 
@@ -284,6 +332,9 @@ Ext.onReady(function() {
                     });
                 Ext.example.msg("Info","Please click on the boundaries of a polygon.<br/>Double-click to end drawing.");  //TODO:  I18n
                 polygonControl.activate();
+            } else if( currentAnswer.type == 'polyline' ) {
+                Ext.example.msg("Info","Please click on the verticies of a polyline.<br/>Double-click to end drawing.");  //TODO:  I18n
+                polylineControl.activate();
             }
         });
 
@@ -303,7 +354,7 @@ Ext.onReady(function() {
                        new OpenLayers.Geometry.Polygon(ring),
                        {},
                        {
-                           fillColor: '#FF0000',
+                           faillColor: '#FF0000',
                            fillOpacity: 0.05,
                            strokeColor: '#FF0000',
                            strokeOpacity: 0.05

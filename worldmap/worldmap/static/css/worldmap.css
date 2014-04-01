@@ -113,7 +113,13 @@
     width:48px;
     background-image: url('http://robertlight.com/tmp/polygonIcon.png');
 }
-
+.polyline-tool {
+    display:inline-block;
+    background: no-repeat scroll 0 0 transparent;
+    height:48px;
+    width:48px;
+    background-image: url('http://robertlight.com/tmp/polylineIcon.png');
+}
 .no-close .ui-dialog-titlebar-close {
   display: none;
 }

@@ -17,3 +17,4 @@ from .worldmap import IncludesConstraintBlock
 from .worldmap import ExcludesConstraintBlock
 from .worldmap import PointBlock
 from .worldmap import PolygonBlock
+from .worldmap import PolylineBlock

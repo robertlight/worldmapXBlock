@@ -12,6 +12,7 @@ from xblock.fields import Scope, Integer, Any, String, Float, Dict, Boolean,List
 from xblock.fragment import Fragment
 from lxml import etree
 from shapely.geometry.polygon import Polygon
+from shapely.geometry import LineString
 from shapely.geometry.point import Point
 from shapely.geos import TopologicalError
 from django.utils.translation import ugettext as _
@@ -31,6 +32,12 @@ def makePolygon(list):
     for pt in list:
         arr.append((pt['lon']+360., pt['lat']))   #pad longitude by 360 degrees to avoid int'l date line problems
     return Polygon(arr)
+
+def makeLineString(list):
+    arr = []
+    for pt in list:
+        arr.append((pt['lon']+360., pt['lat']))   #pad longitude by 360 degrees to avoid int'l date line problems
+    return LineString(arr)
 
 #***********************************************************************************************
 
@@ -301,6 +308,66 @@ class WorldMapXBlock(XBlock):
         }
 
     @XBlock.json_handler
+    def polyline_response(self, data, suffix=''):
+
+        arr = []
+        for pt in data['polyline']:
+            arr.append((pt['lon']+360., pt['lat']))
+        answerPolyline = LineString(arr)
+        additionalErrorInfo = ""
+
+        isHit = True
+        try:
+
+            totalGradeValue = 0
+            totalCorrect = 0
+            for constraint in data['answer']['constraints']:
+                constraintSatisfied = True
+
+                if( constraint['type'] == 'matches'):
+
+
+                    percentMatch = constraint['percentMatch']
+                    answerPolygon  = answerPolyline.buffer(constraint['padding'])
+                    constraintPolyline = makeLineString(constraint['geometry']['points'])
+
+                    buffer = max(constraintPolyline.length*0.2, constraint['padding']*180/(math.pi*self.SPHERICAL_DEFAULT_RADIUS))
+
+                    constraintPolygon = constraintPolyline.buffer(buffer)
+
+                    constraintSatisfied = constraintPolygon.contains(answerPolyline)
+
+                    if constraintSatisfied:
+                        constraintSatisfied = abs(constraintPolyline.length - answerPolyline.length)/constraintPolyline.length < (100-percentMatch)/100.
+                        if not constraintSatisfied:
+                            additionalErrorInfo = " - The line wasn't long enough"
+                    else:
+                        additionalErrorInfo = " - You missed the proper area"
+
+
+                totalGradeValue += constraint['percentOfGrade']
+                if constraintSatisfied :
+                    totalCorrect += constraint['percentOfGrade']
+
+                isHit = isHit and constraintSatisfied
+                constraint['satisfied'] = constraintSatisfied
+
+        except:
+            print _("Unexpected error: "), sys.exc_info()[0]
+
+        percentIncorrect = math.floor( 100 - totalCorrect*100/totalGradeValue);
+
+        if isinstance(self.get_parent(), WorldmapQuizBlock ):
+            self.get_parent().setScore(data['answer']['id'], 100-percentIncorrect, 100)
+
+        return {
+            'answer':data['answer'],
+            'isHit': isHit,
+            'percentCorrect': 100-percentIncorrect,
+            'correctExplanation': "{:.0f}% incorrect".format(percentIncorrect)+additionalErrorInfo
+        }
+
+    @XBlock.json_handler
     def getAnswers(self, data, suffix=''):
         if isinstance(self.get_parent(), WorldmapQuizBlock):
             arr = []
@@ -327,17 +394,25 @@ class WorldMapXBlock(XBlock):
 
         # create a bunch of polygons that are more/less the shape of our original geometry
         geometryArr = []
-        if( data['type'] == 'point'):
+        if data['type'] == 'point':
             point = Point(data['geometry']['lon']+360., data['geometry']['lat'])
             geometryArr.append( point.buffer(buffer))
             geometryArr.append( point.buffer(buffer*2))
             geometryArr.append( point.buffer(buffer*4))
             geometryArr.append( point.buffer(buffer*8))
-        elif( data['type'] == 'polygon'):
+        elif data['type'] == 'polygon' or data['type'] == 'polyline':
             arr = []
-            for pt in data['geometry']:
-                arr.append((pt['lon']+360., pt['lat']))
-            polygon = Polygon(arr)
+            if data['type'] == 'polygon':
+                for pt in data['geometry']:
+                    arr.append((pt['lon']+360., pt['lat']))
+                polygon = Polygon(arr)
+            else:
+                for pt in data['geometry']['points']:
+                    arr.append((pt['lon']+360., pt['lat']))
+                polyline = LineString(arr)
+                buffer = max(buffer, 0.2*polyline.length)
+                polygon = LineString(arr).buffer(buffer)
+
             geometryArr.append( polygon.buffer(buffer*1.5))
             geometryArr.append( polygon.buffer(buffer*.5 ))
             geometryArr.append( polygon.buffer(2*buffer).buffer(-2*buffer) )
@@ -770,25 +845,25 @@ class WorldMapXBlock(XBlock):
                           </includes>
                        </constraints>
                     </answer>
+                    <answer id='boffo' color='00FFFF' type='polyline' hintAfterAttempt='2'>
+                       <explanation>
+                          Draw a polyline on the land bridge that formed Nahant bay?
+                       </explanation>
+                       <constraints>
+                          <matches percentOfGrade="100" padding='500'>
+                              <polyline>
+                                 <point lon="-70.93703839573509" lat="42.455142795067786"/>
+                                 <point lon="-70.93978497776635" lat="42.44146279890606"/>
+                                 <point lon="-70.93360516819578" lat="42.43082073646349"/>
+                              </polyline>
+                              <explanation>
+                                 <B>Hint:</B> Look for Nahant Bay on the map - draw a polyline on the land bridge out to Nahant Island
+                              </explanation>
+                          </matches>
+                       </constraints>
+                    </answer>
                     <worldmap href='http://23.21.172.243/maps/bostoncensus/embed?' debug='true' width='600' height='400' baseLayer='OpenLayers_Layer_Google_116'>
-                       <layers>
-                          <layer id="geonode:qing_charity_v1_mzg"/>
-                          <layer id="OpenLayers_Layer_WMS_122">
-                             <param name="CensusYear" value="1972"/>
-                          </layer>
-                          <layer id="OpenLayers_Layer_WMS_124">
-                             <param name="CensusYear" min="1973" max="1977"/>
-                          </layer>
-                          <layer id="OpenLayers_Layer_WMS_120">
-                             <param name="CensusYear" value="1976"/>
-                          </layer>
-                          <layer id="OpenLayers_Layer_WMS_118">
-                             <param name="CensusYear" value="1978"/>
-                          </layer>
-                          <layer id="OpenLayers_Layer_Vector_132">
-                             <param name="CensusYear" value="1980"/>
-                          </layer>
-                       </layers>
+
                        <group-control name="Census Data" visible="true">
                           <layer-control layerid="OpenLayers_Layer_WMS_120" visible="true" name="layer0"/>
                           <layer-control layerid="OpenLayers_Layer_WMS_122" visible="true" name="layerA"/>
@@ -810,38 +885,6 @@ class WorldMapXBlock(XBlock):
                           </group-control>
                        </group-control>
 
-                       <sliders>
-                          <slider id="timeSlider" title="A" param="CensusYear" min="1972" max="1980" increment="0.2" position="left"/>
-                          <slider id="timeSlider7" title="Abcdefg" param="CensusYear" min="1972" max="1980" increment="0.2" position="left"/>
-                          <slider id="timeSlider2" title="B" param="CensusYear" min="1972" max="1980" increment="0.2" position="right">
-                             <help>
-                                <B>ABC</B><br/>
-                                <i>yippity doo dah</i>
-                             </help>
-                          </slider>
-                          <slider id="timeSlider6" title="Now is the time for" param="CensusYear" min="1972" max="1980" increment="0.2" position="right">
-                             <help>
-                                 <B>This can be any html</B><br/>
-                                 <i>you can use to create help info for using the slider</i><br/>
-                                 <b>You can even include images:</b>
-                                 <img src="http://static.adzerk.net/Advertisers/bc85dff2b3dc44ddb9650e1659b1ad1e.png"/>
-                             </help>
-                          </slider>
-                          <slider id="timeSlider3" title="Hello world" param="CensusYear" min="1972" max="1980" increment="0.2" position="top"/>
-                          <slider id="timeSlider8" title="Hello world12345" param="CensusYear" min="1972" max="1980" increment="0.2" position="top"/>
-                          <slider id="timeSlider4" title="Now is the time for all good men" param="CensusYear" min="1972" max="1980" increment="0.2" position="bottom"/>
-                          <slider id="timeSlider5" title="to come to the aid of their country" param="CensusYear" min="1972" max="1980" increment="0.2" position="bottom">
-                             <help>
-                                 <B>This is some generalized html</B><br/>
-                                 <i>you can use to create help info for using the slider</i>
-                                 <ul>
-                                    <li>You can explain what it does</li>
-                                    <li>How to interpret things</li>
-                                    <li>What other things you might be able to do</li>
-                                 </ul>
-                             </help>
-                          </slider>
-                        </sliders>
                     </worldmap>
                 </worldmap-quiz>
               """
@@ -1152,6 +1195,18 @@ class PolygonBlock(GeometryBlock):
             pts.append(pt.data)
         return {
             'type': 'polygon',
+            'points':pts
+        }
+
+class PolylineBlock(PolygonBlock):
+
+    @property
+    def data(self):
+        pts = []
+        for pt in self.points:
+            pts.append(pt.data)
+        return {
+            'type': 'polyline',
             'points':pts
         }
 
