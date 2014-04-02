@@ -324,9 +324,7 @@ class WorldMapXBlock(XBlock):
             for constraint in data['answer']['constraints']:
                 constraintSatisfied = True
 
-                if( constraint['type'] == 'matches'):
-
-
+                if constraint['type'] == 'matches' :
                     percentMatch = constraint['percentMatch']
                     answerPolygon  = answerPolyline.buffer(constraint['padding'])
                     constraintPolyline = makeLineString(constraint['geometry']['points'])
@@ -343,7 +341,11 @@ class WorldMapXBlock(XBlock):
                             additionalErrorInfo = " - The line wasn't long enough"
                     else:
                         additionalErrorInfo = " - You missed the proper area"
-
+                elif constraint['type'] == "inside":
+                    constraintPolygon = makePolygon(constraint['geometry']['points']).buffer(buffer)
+                    constraintSatisfied = constraintPolygon.contains(answerPolyline)
+                    if not constraintSatisfied:
+                        additionalErrorInfo = " - Outside permissible boundary"
 
                 totalGradeValue += constraint['percentOfGrade']
                 if constraintSatisfied :
@@ -860,6 +862,17 @@ class WorldMapXBlock(XBlock):
                                  <B>Hint:</B> Look for Nahant Bay on the map - draw a polyline on the land bridge out to Nahant Island
                               </explanation>
                           </matches>
+                          <inside percentOfGrade="25"  padding='1'>
+                             <polygon>
+                                 <point lon="-70.9210738876792" lat="42.47325152648776"/>
+                                 <point lon="-70.95746609959279" lat="42.471732113995365"/>
+                                 <point lon="-70.93686673435874" lat="42.42005014321707"/>
+                                 <point lon="-70.91901395115596" lat="42.433734814183005"/>
+                             </polygon>
+                             <explanation>
+                                The land bridge is somewhere inside this polygon
+                             </explanation>
+                          </inside>
                        </constraints>
                     </answer>
                     <worldmap href='http://23.21.172.243/maps/bostoncensus/embed?' debug='true' width='600' height='400' baseLayer='OpenLayers_Layer_Google_116'>
