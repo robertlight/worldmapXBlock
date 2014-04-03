@@ -6,6 +6,8 @@
 
 var WorldMapRegistry = Array();
 
+function gettext(s) { return s;}  //TODO: replace with django's javascript i18n utilities
+
 function WorldMapXBlock(runtime, element) {
 
     WorldMapRegistry[ getUniqueId()] = { runtime: runtime, element: element };
@@ -425,8 +427,9 @@ function WorldMapXBlock(runtime, element) {
             $("body").append($('<div/>', {id: 'dialog'}));
         }
         try {
-            $('#dialog').prop("title","Info").html(msgHtml).dialog({
+            $('#dialog').prop("title",gettext("Info")).html(msgHtml).dialog({
                 modal: true,
+                width: 500,
                 closeOnEscape: true,
                 title: "Info:",
                 position: ['center', 'middle'],
@@ -457,7 +460,8 @@ function WorldMapXBlock(runtime, element) {
         try {
         $('#dialog').html(msgHtml).dialog({
             modal: true,
-            title: "Error!",
+            width: 400,
+            title: gettext("Error!"),
             position: ['center', 'middle'],
             show: 'blind',
             hide: 'blind',

@@ -19,6 +19,7 @@ from django.utils.translation import ugettext as _
 from shapely import affinity
 from shapely import ops
 from random import randrange
+from django.utils.translation import ugettext as _    #see - https://docs.djangoproject.com/en/1.3/topics/i18n/internationalization/
 
 log = logging.getLogger(__name__)
 
@@ -206,7 +207,7 @@ class WorldMapXBlock(XBlock):
         correctExplanation = ""
         percentCorrect = 100
         if not hit :
-            correctExplanation = "incorrect location"
+            correctExplanation = _("incorrect location")
             percentCorrect = 0
 
         if isinstance(self.get_parent(), WorldmapQuizBlock ):
@@ -249,11 +250,11 @@ class WorldMapXBlock(XBlock):
                         if constraintSatisfied :
                             constraintSatisfied = (constraintPolygon.difference(answerPolygon).area*100/constraintPolygon.area < (100-percentMatch))
                             if not constraintSatisfied :
-                                additionalErrorInfo = " (polygon didn't include enough of correct area)"
+                                additionalErrorInfo = _(" (polygon didn't include enough of correct area)")
                         else:
-                            additionalErrorInfo = " (polygon didn't include enough of correct area)"
+                            additionalErrorInfo = _(" (polygon didn't include enough of correct area)")
                     else:
-                        additionalErrorInfo = " (polygon too big)"
+                        additionalErrorInfo = _(" (polygon too big)")
 
                 elif( constraint['type'] == 'includes' or constraint['type'] == 'excludes'):
                     if( constraint['geometry']['type'] == 'polygon' ):
@@ -264,7 +265,7 @@ class WorldMapXBlock(XBlock):
                             if constraintSatisfied and constraint['maxAreaFactor'] != None :
                                 constraintSatisfied = answerPolygon.area/constraintPolygon.area < constraint['maxAreaFactor']
                                 if not constraintSatisfied :
-                                    additionalErrorInfo = " (polygon too big)"
+                                    additionalErrorInfo = _(" (polygon too big)")
                         else:
                             constraintSatisfied = constraintPolygon.disjoint(answerPolygon)
                     elif( constraint['geometry']['type'] == 'point' ):
@@ -275,7 +276,7 @@ class WorldMapXBlock(XBlock):
                             if constraintSatisfied and constraint['maxAreaFactor'] != None :
                                 constraintSatisfied = answerPolygon.area/constraintPt.buffer(180*constraint['padding']/(self.SPHERICAL_DEFAULT_RADIUS*math.pi)).area < constraint['maxAreaFactor']
                                 if not constraintSatisfied :
-                                    additionalErrorInfo = " (polygon too big)"
+                                    additionalErrorInfo = _(" (polygon too big)")
                         else:
                             constraintSatisfied = answerPolygon.disjoint(makePoint(constraint['geometry']))
 
@@ -338,14 +339,20 @@ class WorldMapXBlock(XBlock):
                     if constraintSatisfied:
                         constraintSatisfied = abs(constraintPolyline.length - answerPolyline.length)/constraintPolyline.length < (100-percentMatch)/100.
                         if not constraintSatisfied:
-                            additionalErrorInfo = " - The line wasn't long enough"
+                            additionalErrorInfo = _(" - The line wasn't long enough")
                     else:
-                        additionalErrorInfo = " - You missed the proper area"
+                        additionalErrorInfo = _(" - You missed the proper area")
                 elif constraint['type'] == "inside":
                     constraintPolygon = makePolygon(constraint['geometry']['points']).buffer(buffer)
                     constraintSatisfied = constraintPolygon.contains(answerPolyline)
                     if not constraintSatisfied:
-                        additionalErrorInfo = " - Outside permissible boundary"
+                        additionalErrorInfo = _(" - Outside permissible boundary")
+                elif constraint['type'] == 'excludes':
+                    buffer = constraint['padding']*180/(math.pi*self.SPHERICAL_DEFAULT_RADIUS)
+                    constraintPolygon = makePolygon(constraint['geometry']['points']).buffer(buffer)
+                    constraintSatisfied = not constraintPolygon.crosses(answerPolyline)
+                    if not constraintSatisfied:
+                        additionalErrorInfo = _(" - Must be outside of a certain boundary")
 
                 totalGradeValue += constraint['percentOfGrade']
                 if constraintSatisfied :
@@ -374,11 +381,14 @@ class WorldMapXBlock(XBlock):
         if isinstance(self.get_parent(), WorldmapQuizBlock):
             arr = []
             for answer in self.get_parent().answers:
-                arr.append( answer.data )
+                try:
+                    arr.append( answer.data )
+                except:
+                    print _("Unexpected error: "), sys.exc_info()[0]
 
             return {
                 'answers': arr,
-                'explanation': self.get_parent().explanation.content
+                'explanation': self.get_parent().explanationHTML
             }
         return None
 
@@ -444,7 +454,7 @@ class WorldMapXBlock(XBlock):
 
     @XBlock.json_handler
     def getExplanation(self,data,suffix=''):
-        return self.get_parent().explanation.content
+        return self.get_parent().explanationHTML
 
 
     @XBlock.json_handler
@@ -851,7 +861,7 @@ class WorldMapXBlock(XBlock):
                        <explanation>
                           Draw a polyline on the land bridge that formed Nahant bay?
                        </explanation>
-                       <constraints>
+                       <constraints hintDisplayTime='-1'>
                           <matches percentOfGrade="100" padding='500'>
                               <polyline>
                                  <point lon="-70.93703839573509" lat="42.455142795067786"/>
@@ -873,6 +883,25 @@ class WorldMapXBlock(XBlock):
                                 The land bridge is somewhere inside this polygon
                              </explanation>
                           </inside>
+                          <excludes percentOfGrade="25" padding="1">
+                             <polygon>
+                                <point lon="-70.9252795914228" lat="42.42955370389016"/>
+                                <point lon="-70.93763921056394" lat="42.42581580857819"/>
+                                <point lon="-70.93652341161325" lat="42.416438412427965"/>
+                                <point lon="-70.92828366551946" lat="42.41795916653644"/>
+                                <point lon="-70.92905614171568" lat="42.42112728581168"/>
+                                <point lon="-70.91978642736025" lat="42.424105171979036"/>
+                                <point lon="-70.91789815221426" lat="42.420683758749576"/>
+                                <point lon="-70.90983006749771" lat="42.416375046873334"/>
+                                <point lon="-70.90536687169678" lat="42.416628508708406"/>
+                                <point lon="-70.90227696691106" lat="42.41992341934355"/>
+                                <point lon="-70.91060254369391" lat="42.42708291670639"/>
+                                <point lon="-70.91927144322945" lat="42.42949035158941"/>
+                             </polygon>
+                             <explanation>
+                                Must not include Nahant Island
+                             </explanation>
+                          </excludes>
                        </constraints>
                     </answer>
                     <worldmap href='http://23.21.172.243/maps/bostoncensus/embed?' debug='true' width='600' height='400' baseLayer='OpenLayers_Layer_Google_116'>
@@ -1031,12 +1060,12 @@ class WorldmapExpositoryBlock(XBlock):
         return None
 
     @property
-    def explanation(self):
+    def explanationHTML(self):
         for child_id in self.children:  # pylint: disable=E1101
             child = self.runtime.get_block(child_id)
             if isinstance(child, HelpBlock):
-                return child
-        return None
+                return child.content
+        return ""
 
     def getGeometry(self, id):
         for child_id in self.children:  # pylint: disable=E1101
@@ -1079,19 +1108,20 @@ class ConstraintBlock(XBlock):
     @property
     def data(self):
         return {
-            'explanation':self.explanation.content,
+            'explanation':self.explanationHTML,
             'geometry':self.geometry.data,
             'percentOfGrade':self.percentOfGrade,
             'padding':self.padding
         }
 
     @property
-    def explanation(self):
+    def explanationHTML(self):
         for child_id in self.children:  # pylint: disable=E1101
             child = self.runtime.get_block(child_id)
             if isinstance(child, HelpBlock):
-                return child
-        return None
+                return child.content
+        return ""
+
 
     @property
     def geometry(self):
@@ -1114,7 +1144,7 @@ class MatchesConstraintBlock(ConstraintBlock):
             'geometry':self.geometry.data,
             'padding':self.padding,
             'percentOfGrade':self.percentOfGrade,
-            'explanation':self.explanation.content
+            'explanation':self.explanationHTML
         }
 
 class InsideOfConstraintBlock(ConstraintBlock):
@@ -1128,7 +1158,7 @@ class InsideOfConstraintBlock(ConstraintBlock):
             'geometry':self.geometry.data,
             'padding':self.padding,
             'percentOfGrade':self.percentOfGrade,
-            'explanation':self.explanation.content
+            'explanation':self.explanationHTML
         }
 
 class IncludesConstraintBlock(ConstraintBlock):
@@ -1145,7 +1175,7 @@ class IncludesConstraintBlock(ConstraintBlock):
             'padding':self.padding,
             'percentOfGrade':self.percentOfGrade,
             'maxAreaFactor':self.maxAreaFactor,
-            'explanation':self.explanation.content
+            'explanation':self.explanationHTML
         }
 
 class ExcludesConstraintBlock(ConstraintBlock):
@@ -1158,7 +1188,7 @@ class ExcludesConstraintBlock(ConstraintBlock):
             'geometry':self.geometry.data,
             'padding':self.padding,
             'percentOfGrade':self.percentOfGrade,
-            'explanation':self.explanation.content
+            'explanation':self.explanationHTML
         }
 
 
@@ -1248,18 +1278,18 @@ class AnswerBlock(XBlock):
             'id':self.id,
             'color':self.color,
             'type':self.type,
-            'explanation':self.explanation.content,
+            'explanation':self.explanationHTML,
             'constraints':constraints,
             'hintAfterAttempt': self.hintAfterAttempt,
             'hintDisplayTime' : self.hintDisplayTime
         }
     @property
-    def explanation(self):
+    def explanationHTML(self):
         for child_id in self.children:  # pylint: disable=E1101
             child = self.runtime.get_block(child_id)
             if isinstance(child, HelpBlock):
-                return child
-        return None
+                return child.content
+        return ""
 
     @property
     def constraints(self):
