@@ -294,7 +294,7 @@ function WorldMapXBlock(runtime, element) {
                     if( result.isHit ) {
                         div.html("<img src='/resource/equality_demo/public/images/correct-icon.png'/>");
                         MESSAGING.getInstance().sendAll( new Message("reset-answer-tool",null));
-                        info("Correct!", 1000);
+                        info("Correct!", 1000,200);
                     } else {
                         div.html("<img src='/resource/equality_demo/public/images/incorrect-icon.png'/>&nbsp;"+result.correctExplanation);
                         if( result.error != null ) {
@@ -421,15 +421,16 @@ function WorldMapXBlock(runtime, element) {
         /* Here's where you'd do things on page load. */
     });
 
-    function info(msgHtml, duration) {
+    function info(msgHtml, duration, width) {
         if( duration == undefined ) duration = 5000;
         if( document.getElementById("dialog") == undefined ) {
             $("body").append($('<div/>', {id: 'dialog'}));
         }
+        if( width == undefined ) width=500;
         try {
             $('#dialog').prop("title",gettext("Info")).html(msgHtml).dialog({
                 modal: true,
-                width: 500,
+                width: width,
                 closeOnEscape: true,
                 title: "Info:",
                 position: ['center', 'middle'],
