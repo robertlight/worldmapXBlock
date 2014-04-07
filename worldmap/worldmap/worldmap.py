@@ -215,6 +215,7 @@ class WorldMapXBlock(XBlock):
 
         return {
             'answer':data['answer'],
+            'xml': "<point lon='%s' lat='%s'/>\n" % (longitude,latitude),
             'percentCorrect': percentCorrect,
             'correctExplanation': correctExplanation,
             'isHit': hit
@@ -223,9 +224,13 @@ class WorldMapXBlock(XBlock):
     @XBlock.json_handler
     def polygon_response(self, data, suffix=''):
 
+        xml = "<polygon>\n"
         arr = []
         for pt in data['polygon']:
             arr.append((pt['lon']+360., pt['lat']))
+            xml += "  <point lon='%s' lat='%s'/>\n" % (pt['lon'],pt['lat'])
+        xml += "</polygon>"
+
         answerPolygon = Polygon(arr)
 
         additionalErrorInfo = ""
@@ -303,6 +308,7 @@ class WorldMapXBlock(XBlock):
 
         return {
             'answer':data['answer'],
+            'xml': xml,
             'isHit': isHit,
             'percentCorrect': 100-percentIncorrect,
             'correctExplanation': "{:.0f}% incorrect".format(percentIncorrect)+additionalErrorInfo
@@ -311,9 +317,12 @@ class WorldMapXBlock(XBlock):
     @XBlock.json_handler
     def polyline_response(self, data, suffix=''):
 
+        xml = "<polyline>\n"
         arr = []
         for pt in data['polyline']:
             arr.append((pt['lon']+360., pt['lat']))
+            xml += "  <point lon='%s' lat='%s'/>\n" % (pt['lon'],pt['lat'])
+        xml += "</polyline>"
         answerPolyline = LineString(arr)
         additionalErrorInfo = ""
 
@@ -371,6 +380,7 @@ class WorldMapXBlock(XBlock):
 
         return {
             'answer':data['answer'],
+            'xml': xml,
             'isHit': isHit,
             'percentCorrect': 100-percentIncorrect,
             'correctExplanation': "{:.0f}% incorrect".format(percentIncorrect)+additionalErrorInfo
@@ -553,9 +563,9 @@ class WorldMapXBlock(XBlock):
                        </layers>
                     </worldmap>
                     <explanation>
-                          Lorem ipsum dolor sit amet, <a href='#' onclick='return highlight(\"backbay\",-2)'>Back Bay</a> adipiscing elit. Aliquam a neque diam . Cras ac erat nisi. Etiam aliquet ultricies lobortis <a href='#' onclick='return highlight(\"esplanade\")'>Esplanade</a>. Etiam lacinia malesuada leo, pretium egestas mauris suscipit at. Fusce ante mi, faucibus a purus quis, commodo accumsan ipsum. Morbi vitae ultrices nibh. Quisque quis dolor elementum sem mollis pharetra vitae quis magna. Duis auctor pretium ligula a eleifend.
-                          <p/>Curabitur sem <a href='#' onclick='return highlightLayer(\"OpenLayers_Layer_WMS_124\",-2)'>layer diam</a>, congue sed vehicula vitae  <a href='#' onclick='return highlight(\"bay-village\", -5)'>Bay Village</a>, lobortis pulvinar odio. Phasellus ac lacus sapien. Nam nec tempus metus, sit amet ullamcorper tellus. Nullam ac nibh semper felis vulputate elementum eget in ligula. Integer semper pharetra orci, et tempor orci commodo a. Duis id faucibus felis. Maecenas bibendum accumsan nisi, ut semper quam elementum quis. Donec erat libero, pretium sollicitudin augue a, suscipit mollis libero. Mauris aliquet sem eu ligula rutrum imperdiet. Proin quis velit congue, fermentum ligula vitae, eleifend nisi. Sed justo est, egestas id nisl non, fringilla vulputate orci. Ut non nisl vitae lectus tincidunt sollicitudin. Donec ornare purus eu dictum sollicitudin. Aliquam erat volutpat.
-                          <p/>Vestibulum ante ipsum primis in faucibus orci luctus et <a href='#' onclick='return highlight(\"big-island\")'>Big Island</a>ultrices posuere cubilia Curae; Quisque purus dolor, fermentum eu vestibulum nec, ultricies semper tellus. Vivamus nunc mi, fermentum a commodo vel, iaculis in odio. Vivamus commodo mi convallis, congue magna eget, sodales sem. Morbi facilisis nunc vitae porta elementum. Praesent auctor vitae nisi a pharetra. Mauris non urna auctor nunc dignissim mollis. In sem ipsum, porta sit amet dignissim ut, adipiscing eu dui. Nam sodales nisi quis urna malesuada, quis aliquet ipsum placerat.
+                          Lorem ipsum dolor sit amet, <a href='#' onclick='return highlight(\"backbay\", 0, -2)'>Back Bay</a> adipiscing elit. Aliquam a neque diam . Cras ac erat nisi. Etiam aliquet ultricies lobortis <a href='#' onclick='return highlight(\"esplanade\")'>Esplanade</a>. Etiam lacinia malesuada leo, pretium egestas mauris suscipit at. Fusce ante mi, faucibus a purus quis, commodo accumsan ipsum. Morbi vitae ultrices nibh. Quisque quis dolor elementum sem mollis pharetra vitae quis magna. Duis auctor pretium ligula a eleifend.
+                          <p/>Curabitur sem <a href='#' onclick='return highlightLayer(\"OpenLayers_Layer_WMS_124\",5000, -2)'>layer diam</a>, congue sed vehicula vitae  <a href='#' onclick='return highlight(\"bay-village\", 10000, -5)'>Bay Village</a>, lobortis pulvinar odio. Phasellus ac lacus sapien. Nam nec tempus metus, sit amet ullamcorper tellus. Nullam ac nibh semper felis vulputate elementum eget in ligula. Integer semper pharetra orci, et tempor orci commodo a. Duis id faucibus felis. Maecenas bibendum accumsan nisi, ut semper quam elementum quis. Donec erat libero, pretium sollicitudin augue a, suscipit mollis libero. Mauris aliquet sem eu ligula rutrum imperdiet. Proin quis velit congue, fermentum ligula vitae, eleifend nisi. Sed justo est, egestas id nisl non, fringilla vulputate orci. Ut non nisl vitae lectus tincidunt sollicitudin. Donec ornare purus eu dictum sollicitudin. Aliquam erat volutpat.
+                          <p/>Vestibulum ante ipsum primis in faucibus orci luctus et <a href='#' onclick='return highlight(\"big-island\", 2000)'>Big Island</a>ultrices posuere cubilia Curae; Quisque purus dolor, fermentum eu vestibulum nec, ultricies semper tellus. Vivamus nunc mi, fermentum a commodo vel, iaculis in odio. Vivamus commodo mi convallis, congue magna eget, sodales sem. Morbi facilisis nunc vitae porta elementum. Praesent auctor vitae nisi a pharetra. Mauris non urna auctor nunc dignissim mollis. In sem ipsum, porta sit amet dignissim ut, adipiscing eu dui. Nam sodales nisi quis urna malesuada, quis aliquet ipsum placerat.
 
                     </explanation>
                     <polygon id='backbay'>
@@ -596,7 +606,7 @@ class WorldMapXBlock(XBlock):
 
                 <worldmap-quiz>
                     <explanation>
-                         A quiz about the Boston area... particularly <B><a href='#' onclick='return highlight(\"backbay\",-2)'>Back Bay</a></B>
+                         A quiz about the Boston area... particularly <B><a href='#' onclick='return highlight(\"backbay\", 5000, -2)'>Back Bay</a></B>
                     </explanation>
                     <polygon id='backbay'>
                          <point lon="-71.09350774082822" lat="42.35148683512319"/>

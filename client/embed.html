@@ -291,6 +291,7 @@ Ext.onReady(function() {
         MESSAGING.getInstance().registerHandler("highlight-layer",function(m) {
             var data = JSON.parse(m.getMessage());
            var layer = app.mapPanel.map.getLayer(data['layer']);
+           var duration = data['duration'];
            if( layer != null ) {
                var ctrl = Ext.getCmp("layer_menu_" + data['layer']);
                if( !ctrl.checked ) {
@@ -298,9 +299,11 @@ Ext.onReady(function() {
                }
                var zoom = app.mapPanel.map.getZoomForExtent(layer.maxExtent, true) + data['relativeZoom'];
                app.mapPanel.map.setCenter(layer.maxExtent.getCenterLonLat(), zoom);
-               setTimeout( function() {
-                   ctrl.setChecked( false );
-               },6000);
+               if( duration != undefined && duration > 0 ) {
+                   setTimeout( function() {
+                       ctrl.setChecked( false );
+                   },duration);
+               }
            } else {
                console.log("ERROR: could not find layer for id: "+id);
            }
@@ -386,6 +389,7 @@ Ext.onReady(function() {
         MESSAGING.getInstance().registerHandler("highlight-geometry", function(e) {
             var data = JSON.parse(e.message);
             var type = data['type'];
+            var duration = data['duration']
             var features = [];
             var relativeZoom = data['relativeZoom'] == undefined ? 0 : data['relativeZoom'];
             var bounds = null;
@@ -416,10 +420,12 @@ Ext.onReady(function() {
                 );
                 polygonLayer.addFeatures(features);
                 polygonLayer.redraw();
-                setTimeout( function() {
-                    polygonLayer.removeFeatures(features);
-                    polygonLayer.redraw();
-                },10000);
+                if( duration != undefined && duration > 0 ) {
+                    setTimeout( function() {
+                        polygonLayer.removeFeatures(features);
+                        polygonLayer.redraw();
+                    },duration);
+                }
             } else if( type == 'point') {
                // app.mapPanel.map
                 var size = new OpenLayers.Size(21,25);
@@ -429,9 +435,11 @@ Ext.onReady(function() {
                 app.mapPanel.map.setCenter( [xy.x, xy.y], 11+relativeZoom);
                 marker = new OpenLayers.Marker({lon:xy.x,lat:xy.y},icon);
                 markerLayer.addMarker(marker);
-                setTimeout( function() {
-                    markerLayer.removeMarker(marker);
-                },5000);
+                if( duration != undefined && duration > 0 ) {
+                    setTimeout( function() {
+                        markerLayer.removeMarker(marker);
+                    },duration);
+                }
             }
 
         });

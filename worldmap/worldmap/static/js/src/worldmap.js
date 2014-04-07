@@ -288,15 +288,20 @@ function WorldMapXBlock(runtime, element) {
             success: function(result) {
                 if( !result ) {
                     console.log("Failed to test "+ m.type+" for map: "+$('.frame', el).attr('id'));
-                } else {  //TODO: Fix url to point to local image
+                } else {
                     var worldmap_block = $('#'+getUniqueId()).closest('div[class="worldmap_block"]');
                     var div = $(worldmap_block).find('#score-'+result.answer.id);
+
+                    if( result.xml != undefined ) {
+                        debug(result.xml);
+                    }
+
                     if( result.isHit ) {
                         div.html("<img src='/resource/equality_demo/public/images/correct-icon.png'/>");
                         MESSAGING.getInstance().sendAll( new Message("reset-answer-tool",null));
                         info("Correct!", 1000,200);
                     } else {
-                        div.html("<img src='/resource/equality_demo/public/images/incorrect-icon.png'/>&nbsp;"+result.correctExplanation);
+                        div.html("<img src='/resource/equality_demo/public/images/incorrect-icon.png'/>&nbsp;"+result.correctExplanation);  //TODO: Fix url to point to local image
                         if( result.error != null ) {
                             error(result.error);
                         } else {
@@ -397,10 +402,8 @@ function WorldMapXBlock(runtime, element) {
             }
         });
 
-        if( $('.frame',element).attr('debug') ) {
-            if( layer.visibility ) {
-                $(".layerIdInfo",element).text(layer.id);
-            }
+        if( layer.visibility ) {
+            debug("layer id: "+layer.id);
         }
 
         $.ajax({
@@ -415,11 +418,19 @@ function WorldMapXBlock(runtime, element) {
         });
     }
 
+
     $(function ($) {
         console.log("initialize on page load");
+        $("textarea").resizable();
   //      $(document).tooltip();
         /* Here's where you'd do things on page load. */
     });
+
+    function debug(str) {
+        if( $('.frame',element).attr('debug') ) {
+            $(".debugInfo",element).text(str);
+        }
+    }
 
     function info(msgHtml, duration, width) {
         if( duration == undefined ) duration = 5000;
@@ -482,7 +493,7 @@ function addUniqIdToArguments( uniqId, str) {
     return str.replace(/highlight\(/g,"highlight('"+uniqId+"',").replace(/highlightLayer\(/g,"highlightLayer('"+uniqId+"',")
 }
 
-function highlight(uniqId, id, relativeZoom) {
+function highlight(uniqId, id, duration, relativeZoom) {
     var relZoom = relativeZoom == undefined ? 0 : relativeZoom;
     var worldmapData = WorldMapRegistry[uniqId];
     $.ajax({
@@ -491,17 +502,18 @@ function highlight(uniqId, id, relativeZoom) {
         data: JSON.stringify(id),
         success: function(result) {
             result['relativeZoom'] = relZoom;
+            result['duration'] = duration;
             MESSAGING.getInstance().send(uniqId, new Message("highlight-geometry", result));
         }
     });
     return false;
 }
 
-function highlightLayer(uniqId, layerid, relativeZoom) {
+function highlightLayer(uniqId, layerid, duration, relativeZoom) {
     var relZoom = relativeZoom == undefined ? 0 : relativeZoom;
     MESSAGING.getInstance().send(
         uniqId,
-        new Message('highlight-layer', JSON.stringify({layer: layerid, relativeZoom:relZoom}))
+        new Message('highlight-layer', JSON.stringify({layer: layerid, duration: duration, relativeZoom:relZoom}))
     )
     return false;
 }
