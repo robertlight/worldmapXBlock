@@ -255,6 +255,7 @@ function WorldMapXBlock(runtime, element) {
                     if( !n.data.isFolder ) {
                         selectLayer(select, n.data.key);
                     }
+                    return true;
                 }, true);
             },
             onPostInit: function() {

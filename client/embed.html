@@ -440,6 +440,32 @@ Ext.onReady(function() {
                         markerLayer.removeMarker(marker);
                     },duration);
                 }
+            } else if( type == 'polyline') {
+                var points = [];
+                for( var i=0; i<data['points'].length; i++) {
+                    points.push(transformToXY(data['points'][i]));
+                }
+
+                var line = new OpenLayers.Geometry.LineString(points);
+                var center = line.getCentroid();
+                var bounds = line.getBounds();
+                var feature = new OpenLayers.Feature.Vector( line, {}, { strokeColor: '#FF0000', strokeWidth: 4, strokeOpacity: 1.0});
+                feature.state = OpenLayers.State.INSERT;
+                bounds = line.getBounds();
+                features.push(feature);
+                var center = line.getCentroid();
+                app.mapPanel.map.setCenter(
+                        [center.x, center.y],
+                        Math.min(15, relativeZoom + app.mapPanel.map.getZoomForExtent( bounds, false))
+                );
+                polygonLayer.addFeatures(features);
+                polygonLayer.redraw();
+                if( duration != undefined && duration > 0 ) {
+                    setTimeout( function() {
+                        polygonLayer.removeFeatures(features);
+                        polygonLayer.redraw();
+                    },duration);
+                }
             }
 
         });

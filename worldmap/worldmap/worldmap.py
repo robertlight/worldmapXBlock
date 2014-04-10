@@ -1,3 +1,4 @@
+# coding=utf-8
 """TO-DO: Write a description of what this XBlock is."""
 import json
 
@@ -123,6 +124,15 @@ class WorldMapXBlock(XBlock):
             }
         )
 
+        delimiter = "?"
+        try:
+            self.href.index("?")
+            delimiter = "&"
+        except:
+            pass
+
+        self.href = self.href + delimiter + "xblockId=worldmap_" + self.scope_ids.usage_id
+
         html = self.resource_string("static/html/worldmap.html")
 
         url = self.runtime.local_resource_url(self,"static/images/markerIcon.png")
@@ -191,8 +201,6 @@ class WorldMapXBlock(XBlock):
         userAnswer = data['point']
         latitude = userAnswer['lat']
         longitude= userAnswer['lon']
-        #dLatitude= latitude - correctPoint['lat']
-        #dLongitude=longitude - correctPoint['lon']
         hit = True
 
         if correctGeometry['type'] == 'polygon':
@@ -284,6 +292,16 @@ class WorldMapXBlock(XBlock):
                                     additionalErrorInfo = _(" (polygon too big)")
                         else:
                             constraintSatisfied = answerPolygon.disjoint(makePoint(constraint['geometry']))
+                    elif( constraint['geometry']['type'] == 'polyline' ):
+                        constraintLine = makeLineString(constraint['geometry'])
+                        if( constraint['type'] == 'includes' ) :
+                            constraintSatisfied = answerPolygon.contains( constraintLine )
+                            if constraintSatisfied and constraint['maxAreaFactor'] != None :
+                                constraintSatisfied = answerPolygon.area/constraintLine.buffer(180*constraint['padding']/(self.SPHERICAL_DEFAULT_RADIUS*math.pi)).area < constraint['maxAreaFactor']
+                                if not constraintSatisfied :
+                                    additionalErrorInfo = _(" (polygon too big)")
+                        else:
+                            constraintSatisfied = not answerPolygon.disjoint( constraintLine )
 
                 totalGradeValue += constraint['percentOfGrade']
                 if constraintSatisfied :
@@ -547,7 +565,7 @@ class WorldMapXBlock(XBlock):
              """
              <vertical_demo>
                 <worldmap-expository>
-                    <worldmap href='http://23.21.172.243/maps/bostoncensus/embed?' debug='true' width='600' height='400' baseLayer='OpenLayers_Layer_Google_116'>
+                    <worldmap href='http://23.21.172.243/maps/bostoncensus/embed' debug='true' width='600' height='400' baseLayer='OpenLayers_Layer_Google_116'>
                        <layers>
                           <layer id="geonode:qing_charity_v1_mzg"/>
                           <layer id="OpenLayers_Layer_WMS_122">
@@ -563,9 +581,10 @@ class WorldMapXBlock(XBlock):
                        </layers>
                     </worldmap>
                     <explanation>
+                          testing Chinese: 基區提供本站原典資料庫收藏之外的許多經典文獻的全文閱讀和檢索功<br/>
                           Lorem ipsum dolor sit amet, <a href='#' onclick='return highlight(\"backbay\", 0, -2)'>Back Bay</a> adipiscing elit. Aliquam a neque diam . Cras ac erat nisi. Etiam aliquet ultricies lobortis <a href='#' onclick='return highlight(\"esplanade\")'>Esplanade</a>. Etiam lacinia malesuada leo, pretium egestas mauris suscipit at. Fusce ante mi, faucibus a purus quis, commodo accumsan ipsum. Morbi vitae ultrices nibh. Quisque quis dolor elementum sem mollis pharetra vitae quis magna. Duis auctor pretium ligula a eleifend.
                           <p/>Curabitur sem <a href='#' onclick='return highlightLayer(\"OpenLayers_Layer_WMS_124\",5000, -2)'>layer diam</a>, congue sed vehicula vitae  <a href='#' onclick='return highlight(\"bay-village\", 10000, -5)'>Bay Village</a>, lobortis pulvinar odio. Phasellus ac lacus sapien. Nam nec tempus metus, sit amet ullamcorper tellus. Nullam ac nibh semper felis vulputate elementum eget in ligula. Integer semper pharetra orci, et tempor orci commodo a. Duis id faucibus felis. Maecenas bibendum accumsan nisi, ut semper quam elementum quis. Donec erat libero, pretium sollicitudin augue a, suscipit mollis libero. Mauris aliquet sem eu ligula rutrum imperdiet. Proin quis velit congue, fermentum ligula vitae, eleifend nisi. Sed justo est, egestas id nisl non, fringilla vulputate orci. Ut non nisl vitae lectus tincidunt sollicitudin. Donec ornare purus eu dictum sollicitudin. Aliquam erat volutpat.
-                          <p/>Vestibulum ante ipsum primis in faucibus orci luctus et <a href='#' onclick='return highlight(\"big-island\", 2000)'>Big Island</a>ultrices posuere cubilia Curae; Quisque purus dolor, fermentum eu vestibulum nec, ultricies semper tellus. Vivamus nunc mi, fermentum a commodo vel, iaculis in odio. Vivamus commodo mi convallis, congue magna eget, sodales sem. Morbi facilisis nunc vitae porta elementum. Praesent auctor vitae nisi a pharetra. Mauris non urna auctor nunc dignissim mollis. In sem ipsum, porta sit amet dignissim ut, adipiscing eu dui. Nam sodales nisi quis urna malesuada, quis aliquet ipsum placerat.
+                          <p/>Vestibulum ante ipsum primis <a href='#' onclick='return highlight(\"beltway\",4000, -1)'>beltway around boston</a> faucibus orci luctus et <a href='#' onclick='return highlight(\"big-island\", 2000)'>Big Island</a>ultrices posuere cubilia Curae; Quisque purus dolor, fermentum eu vestibulum nec, ultricies semper tellus. Vivamus nunc mi, fermentum a commodo vel, iaculis in odio. Vivamus commodo mi convallis, congue magna eget, sodales sem. Morbi facilisis nunc vitae porta elementum. Praesent auctor vitae nisi a pharetra. Mauris non urna auctor nunc dignissim mollis. In sem ipsum, porta sit amet dignissim ut, adipiscing eu dui. Nam sodales nisi quis urna malesuada, quis aliquet ipsum placerat.
 
                     </explanation>
                     <polygon id='backbay'>
@@ -601,6 +620,42 @@ class WorldMapXBlock(XBlock):
                        <point lon="-71.0687455872032" lat="42.34856893624958"/>
                        <point lon="-71.07140633854628" lat="42.34863237027384"/>
                     </polygon>
+                    <polyline id="beltway">
+                      <point lon='-71.0604629258' lat='42.3434622873'/>
+                      <point lon='-71.0645827988' lat='42.3262044544'/>
+                      <point lon='-71.0522231797' lat='42.3160505758'/>
+                      <point lon='-71.0549697617' lat='42.3099574622'/>
+                      <point lon='-71.0412368515' lat='42.2967536924'/>
+                      <point lon='-71.0426101426' lat='42.2804990976'/>
+                      <point lon='-71.0522231797' lat='42.268305399'/>
+                      <point lon='-71.0275039414' lat='42.2428942831'/>
+                      <point lon='-71.0247573594' lat='42.2296764566'/>
+                      <point lon='-71.0467300156' lat='42.2093359332'/>
+                      <point lon='-71.1030349472' lat='42.202215202'/>
+                      <point lon='-71.1552200058' lat='42.2144216783'/>
+                      <point lon='-71.1840591172' lat='42.2317101486'/>
+                      <point lon='-71.2074050644' lat='42.2550928966'/>
+                      <point lon='-71.2019119004' lat='42.2723702273'/>
+                      <point lon='-71.2019119004' lat='42.285579109'/>
+                      <point lon='-71.2197646836' lat='42.2987852218'/>
+                      <point lon='-71.256843541' lat='42.3373718282'/>
+                      <point lon='-71.2650832871' lat='42.3657889233'/>
+                      <point lon='-71.260963414' lat='42.3931789538'/>
+                      <point lon='-71.256843541' lat='42.4235983077'/>
+                      <point lon='-71.258216832' lat='42.4580557417'/>
+                      <point lon='-71.2444839219' lat='42.4722385889'/>
+                      <point lon='-71.2074050644' lat='42.4823672268'/>
+                      <point lon='-71.1909255722' lat='42.487430931'/>
+                      <point lon='-71.164833043' lat='42.4965445656'/>
+                      <point lon='-71.1208877305' lat='42.5046444593'/>
+                      <point lon='-71.0920486191' lat='42.50363203'/>
+                      <point lon='-71.082435582' lat='42.5188167484'/>
+                      <point lon='-71.0590896347' lat='42.5238775014'/>
+                      <point lon='-71.0439834336' lat='42.5167923324'/>
+                      <point lon='-71.0316238144' lat='42.5157800999'/>
+                      <point lon='-71.0069045762' lat='42.5167923324'/>
+                      <point lon='-70.989051793' lat='42.5228653836'/>
+                    </polyline>
                     <point id="big-island" lon="-70.9657058456866" lat="42.32011232390349"/>
                 </worldmap-expository>
 
@@ -626,7 +681,7 @@ class WorldMapXBlock(XBlock):
                          <point lon="-71.07483956608469" lat="42.357131950552244"/>
                          <point lon="-71.09331462177917" lat="42.35166127043902"/>
                     </polygon>
-                    <answer id='foobar' color='00FF00' type='point' hintAfterAttempt='3'>
+                    <answer id='foobar' color='00FF00' type='point' hintAfterAttempt='0'>
                        <explanation>
                           Where is the biggest island in Boston harbor?
                        </explanation>
@@ -741,29 +796,54 @@ class WorldMapXBlock(XBlock):
                           </matches>
                        </constraints>
                     </answer>
-                    <answer id='esplanade2' color='00FFFF' type='point' hintAfterAttempt='2'>
+                    <answer id='boffo' color='00FFFF' type='polyline' hintAfterAttempt='2'>
                        <explanation>
-                          Click on the esplanade
+                          Draw a polyline on the land bridge that formed Nahant bay?
                        </explanation>
                        <constraints hintDisplayTime='-1'>
+                          <matches percentOfGrade="100" padding='500'>
+                              <polyline>
+                                 <point lon="-70.93703839573509" lat="42.455142795067786"/>
+                                 <point lon="-70.93978497776635" lat="42.44146279890606"/>
+                                 <point lon="-70.93360516819578" lat="42.43082073646349"/>
+                              </polyline>
+                              <explanation>
+                                 <B>Hint:</B> Look for Nahant Bay on the map - draw a polyline on the land bridge out to Nahant Island
+                              </explanation>
+                          </matches>
                           <inside percentOfGrade="25"  padding='1'>
                              <polygon>
-                                <point lon="-71.07466790470745" lat="42.35719537593463"/>
-                                <point lon="-71.08492467197995" lat="42.35399231410341"/>
-                                <point lon="-71.08543965611076" lat="42.35335802506911"/>
-                                <point lon="-71.08822915348655" lat="42.35250172471913"/>
-                                <point lon="-71.08814332279839" lat="42.352279719020736"/>
-                                <point lon="-71.08689877781501" lat="42.35253343975517"/>
-                                <point lon="-71.07411000523211" lat="42.355958569427614"/>
-                                <point lon="-71.07466790470745" lat="42.35719537593463"/>
+                                 <point lon="-70.9210738876792" lat="42.47325152648776"/>
+                                 <point lon="-70.95746609959279" lat="42.471732113995365"/>
+                                 <point lon="-70.93686673435874" lat="42.42005014321707"/>
+                                 <point lon="-70.91901395115596" lat="42.433734814183005"/>
                              </polygon>
                              <explanation>
-                                Click inside of the esplanade area
+                                The land bridge is somewhere inside this polygon
                              </explanation>
                           </inside>
+                          <excludes percentOfGrade="25" padding="1">
+                             <polygon>
+                                <point lon="-70.9252795914228" lat="42.42955370389016"/>
+                                <point lon="-70.93763921056394" lat="42.42581580857819"/>
+                                <point lon="-70.93652341161325" lat="42.416438412427965"/>
+                                <point lon="-70.92828366551946" lat="42.41795916653644"/>
+                                <point lon="-70.92905614171568" lat="42.42112728581168"/>
+                                <point lon="-70.91978642736025" lat="42.424105171979036"/>
+                                <point lon="-70.91789815221426" lat="42.420683758749576"/>
+                                <point lon="-70.90983006749771" lat="42.416375046873334"/>
+                                <point lon="-70.90536687169678" lat="42.416628508708406"/>
+                                <point lon="-70.90227696691106" lat="42.41992341934355"/>
+                                <point lon="-70.91060254369391" lat="42.42708291670639"/>
+                                <point lon="-70.91927144322945" lat="42.42949035158941"/>
+                             </polygon>
+                             <explanation>
+                                Must not include Nahant Island
+                             </explanation>
+                          </excludes>
                        </constraints>
                     </answer>
-                    <worldmap href='http://23.21.172.243/maps/bostoncensus/embed?' debug='true' width='600' height='400' baseLayer='OpenLayers_Layer_Google_116'>
+                    <worldmap href='http://23.21.172.243/maps/bostoncensus/embed' debug='true' width='600' height='400' baseLayer='OpenLayers_Layer_Google_116'>
                        <layers>
                           <layer id="geonode:qing_charity_v1_mzg"/>
                           <layer id="OpenLayers_Layer_WMS_122">
@@ -804,26 +884,7 @@ class WorldMapXBlock(XBlock):
                        </group-control>
 
                        <sliders>
-                          <slider id="timeSlider" title="A" param="CensusYear" min="1972" max="1980" increment="0.2" position="left"/>
-                          <slider id="timeSlider7" title="Abcdefg" param="CensusYear" min="1972" max="1980" increment="0.2" position="left"/>
-                          <slider id="timeSlider2" title="B" param="CensusYear" min="1972" max="1980" increment="0.2" position="right">
-                             <help>
-                                <B>ABC</B><br/>
-                                <i>yippity doo dah</i>
-                             </help>
-                          </slider>
-                          <slider id="timeSlider6" title="Now is the time for" param="CensusYear" min="1972" max="1980" increment="0.2" position="right">
-                             <help>
-                                 <B>This can be any html</B><br/>
-                                 <i>you can use to create help info for using the slider</i><br/>
-                                 <b>You can even include images:</b>
-                                 <img src="http://static.adzerk.net/Advertisers/bc85dff2b3dc44ddb9650e1659b1ad1e.png"/>
-                             </help>
-                          </slider>
-                          <slider id="timeSlider3" title="Hello world" param="CensusYear" min="1972" max="1980" increment="0.2" position="top"/>
-                          <slider id="timeSlider8" title="Hello world12345" param="CensusYear" min="1972" max="1980" increment="0.2" position="top"/>
-                          <slider id="timeSlider4" title="Now is the time for all good men" param="CensusYear" min="1972" max="1980" increment="0.2" position="bottom"/>
-                          <slider id="timeSlider5" title="to come to the aid of their country" param="CensusYear" min="1972" max="1980" increment="0.2" position="bottom">
+                          <slider id="timeSlider5" title="slider:原典資料" param="CensusYear" min="1972" max="1980" increment="0.2" position="bottom">
                              <help>
                                  <B>This is some generalized html</B><br/>
                                  <i>you can use to create help info for using the slider</i>
@@ -914,10 +975,10 @@ class WorldMapXBlock(XBlock):
                           </excludes>
                        </constraints>
                     </answer>
-                    <worldmap href='http://23.21.172.243/maps/bostoncensus/embed?' debug='true' width='600' height='400' baseLayer='OpenLayers_Layer_Google_116'>
+                    <worldmap href='http://23.21.172.243/maps/bostoncensus/embed' debug='true' width='600' height='400' baseLayer='OpenLayers_Layer_Google_116'>
 
-                       <group-control name="Census Data" visible="true">
-                          <layer-control layerid="OpenLayers_Layer_WMS_120" visible="true" name="layer0"/>
+                       <group-control name="Census Data" visible="true" expand="true">
+                          <layer-control layerid="OpenLayers_Layer_WMS_120" visible="true" name="原典資料"/>
                           <layer-control layerid="OpenLayers_Layer_WMS_122" visible="true" name="layerA"/>
                           <layer-control layerid="OpenLayers_Layer_WMS_124" visible="true" name="layerB"/>
                           <layer-control layerid="OpenLayers_Layer_WMS_120" visible="false" name="layerC"/>
@@ -925,12 +986,11 @@ class WorldMapXBlock(XBlock):
                           <layer-control layerid="OpenLayers_Layer_Vector_132" visible="true" name="layerF"/>
                           <group-control name="A sub group of layers">
                              <group-control name="A sub-sub-group">
-                                <layer-control layerid="OpenLayers_Layer_WMS_118" visible="true" name="layerE.1"/>
                                 <layer-control layerid="OpenLayers_Layer_Vector_132" visible="true" name="layerF.1"/>
                              </group-control>
-                             <group-control name="another sub-sub-group" visible="false">
-                                <layer-control layerid="OpenLayers_Layer_WMS_118" visible="true" name="layerE.2"/>
-                                <layer-control layerid="OpenLayers_Layer_Vector_132" visible="true" name="layerF.2"/>
+                             <group-control name="another sub-sub-group" visible="true">
+                                <layer-control layerid="OpenLayers_Layer_WMS_118" visible="false" name="layerE.2"/>
+                                <layer-control layerid="OpenLayers_Layer_Vector_132" visible="false" name="layerF.2"/>
                              </group-control>
                              <layer-control layerid="OpenLayers_Layer_WMS_122" visible="true" name="layerA.1"/>
                              <layer-control layerid="OpenLayers_Layer_WMS_124" visible="true" name="layerB.1"/>
@@ -939,100 +999,6 @@ class WorldMapXBlock(XBlock):
 
                     </worldmap>
                 </worldmap-quiz>
-              """
-              #<worldmap-quiz padding='10'>
-              #    <worldmap name='worldmap' href='http://worldmap.harvard.edu/maps/chinaX/embed?' width='800' height='600' testLatitude='16.775800549402906' testLongitude='-3.0166396836062104' testRadius='10000' debug="true">
-              #       <layers>
-              #          <layer id="OpenLayers_Layer_WMS_276">
-              #             <param name="EastAsiaTribes" min="449" max="545"/>
-              #          </layer>
-              #          <layer id="OpenLayers_Layer_WMS_274">
-              #             <param name="EastAsiaTribes" min="546" max="571"/>
-              #          </layer>
-              #          <layer id="OpenLayers_Layer_WMS_320">
-              #             <param name="EastAsiaTribes" min="73" max="261"/>
-              #          </layer>
-              #          <layer id="OpenLayers_Layer_WMS_324">
-              #             <param name="EastAsiaTribes" min="-82" max="72"/>
-              #          </layer>
-              #          <layer id="OpenLayers_Layer_WMS_294">
-              #             <param name="EastAsiaTribes" min="262" max="280"/>
-              #          </layer>
-              #          <layer id="OpenLayers_Layer_WMS_292">
-              #             <param name="EastAsiaTribes" min="281" max="326"/>
-              #          </layer>
-              #          <layer id="OpenLayers_Layer_WMS_288">
-              #             <param name="EastAsiaTribes" min="327" max="448"/>
-              #          </layer>
-              #          <layer id="OpenLayers_Layer_WMS_272">
-              #             <param name="EastAsiaTribes" value="572"/>
-              #          </layer>
-              #
-              #          <layer id="OpenLayers_Layer_WMS_248">
-              #             <param name="YellowRiver" min="-602" max="11"/>
-              #          </layer>
-              #          <layer id="OpenLayers_Layer_WMS_246">
-              #             <param name="YellowRiver" min="12" max="1048"/>
-              #          </layer>
-              #          <layer id="OpenLayers_Layer_WMS_244">
-              #             <param name="YellowRiver" min="1049" max="1128"/>
-              #          </layer>
-              #          <layer id="OpenLayers_Layer_WMS_242">
-              #             <param name="YellowRiver" min="1129" max="1368"/>
-              #          </layer>
-              #          <layer id="OpenLayers_Layer_WMS_240">
-              #             <param name="YellowRiver" min="1369" max="1855"/>
-              #          </layer>
-              #       </layers>
-              #       <sliders>
-              #          <slider id="YellowRiver" title="Yellow River" param="YellowRiver" min="-602" max="1855" incr="10" position="bottom">
-              #             <help>
-              #                <b>Yellow River diversions</b><br/>
-              #                From 602BCE through 1855CE
-              #             </help>
-              #          </slider>
-              #       </sliders>
-              #       <group-control name="ChinaX layers">
-              #          <group-control name="geography">
-              #            <layer-control layerid="OpenLayers_Layer_WMS_332" name="Coastline1"/>
-              #            <layer-control layerid="OpenLayers_Layer_WMS_330" name="Yellow River"/>
-              #            <layer-control layerid="OpenLayers_Layer_WMS_232" name="Major Rivers"/>
-              #            <layer-control layerid="OpenLayers_Layer_WMS_246" name="Yellow River 1048CE-1128CE"/>
-              #            <layer-control layerid="OpenLayers_Layer_WMS_114" name="Expedition Route"/>
-              #          </group-control>
-              #       </group-control>
-              #    </worldmap>
-              #    <explanation>
-              #         <B>How well do you know the history of the Yellow River?</B>
-              #    </explanation>
-              #    <answer id='foobar' color='00FF00' type='point'>
-              #       <explanation>
-              #          Use the tool button below and show where the diversion point for the alteration in the Yellow River circa 1855
-              #       </explanation>
-              #       <constraints>
-              #          <matches percentOfGrade="25" percentAnswerInsidePaddedGeometry="100" percentGeometryInsidePaddedAnswer="100">
-              #              <point lat="113.523" lon="34.97248"/>
-              #              <explanation>
-              #                 <B> The diversion point was just northwest of Zhengzhou </B>
-              #              </explanation>
-              #          </matches>
-              #       </constraints>
-              #    </answer>
-              #    <answer id='baz' color='0000FF' type='point'>
-              #       <explanation>
-              #          Where is Hong Kong?
-              #       </explanation>
-              #       <constraints>
-              #          <matches percentOfGrade="25" percentAnswerInsidePaddedGeometry="100" percentGeometryInsidePaddedAnswer="100">
-              #              <point lat="114.21516592567018" lon="22.346155606846434"/>
-              #              <explanation>
-              #                 <B> Hong Kong is on the coast north east of Macau </B>
-              #              </explanation>
-              #          </matches>
-              #       </constraints>
-              #    </answer>
-              #</worldmap-quiz>
-             + """
              </vertical_demo>
              """
             ),
@@ -1545,6 +1511,7 @@ class GroupControlBlock(LayerControlBlock):
 
     name    = String(help="visible name of the group", default="Layer Group", scope=Scope.content)
     visible = Boolean(help="whether or not the control should be visible", default=True, scope=Scope.content)
+    expand  = Boolean(help="whether or not the group control should be expanded", default=False, scope=Scope.content)
 
     @property
     def members(self):
@@ -1566,10 +1533,13 @@ class GroupControlBlock(LayerControlBlock):
     def renderToDynatree(self):
         result = []
 
+        allInvisible = True
         for member in self.members :
-            result.append(member.renderToDynatree());
+            result.append(member.renderToDynatree())
+            if member.visible :
+                allInvisible = False
 
-        node = {'title':self.name, 'isFolder': True, 'children': result }
+        node = {'title':self.name, 'isFolder': not allInvisible, 'children': result, 'expand': self.expand }
         if( self.visible == False ):
             node['hidden'] = True
 #            node['addClass'] = "hidden"
