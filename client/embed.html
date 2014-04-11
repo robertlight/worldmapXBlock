@@ -19,6 +19,9 @@
 
 <script type="text/javascript">
 var app;
+
+
+//************************************** XBLOCK RELATED FUNCTIONS & GLOBALS *****************************************
 var markerLayer, polygonLayer;
 var markers = new Array();
 var polygons= new Array();
@@ -102,6 +105,9 @@ function transformToLonLat( lonlat ) {
     var Mercator = new OpenLayers.Projection("EPSG:900913");
     return new OpenLayers.Geometry.Point(lonlat.lon, lonlat.lat).transform(Mercator, Geographic);
 }
+//************************************ END - XBLOCK RELATED FUNCTIONS ***********************************************
+
+
 
 Ext.onReady(function() {
 {% autoescape off %}
@@ -148,6 +154,12 @@ Ext.onReady(function() {
     
     app = new GeoExplorer.Viewer(config);
 
+
+
+
+
+    //********************************************* XBLOCK RELATED CODE ********************************************
+    //useful for debugging...
     MESSAGING.getInstance().registerHandler("info", function(m) { alert("the slave code received this 'info' message: "+m.getMessage()); });
 
     app.on("ready", function() {
@@ -261,10 +273,6 @@ Ext.onReady(function() {
             MESSAGING.getInstance().send(new Message("changelayer", {name: e.layer.name, id:e.layer.id, visibility:e.layer.visibility,opacity:e.layer.opacity, legendData: getLayerLegendInfo(app.config.map.layers, e.layer)}));
         });
 
-
-//	app.mapPanel.map.events.register("changebaselayer", app.mapPanel.map, function(e) {
-//            console.log("changebaselayer event:   id: "+e.layer.id+"   name: "+e.layer.name);
-//        });
         MESSAGING.getInstance().registerHandler("setZoomLevel", function(m) { app.mapPanel.map.zoomTo(m.getMessage()); });
         MESSAGING.getInstance().registerHandler("setCenter",function(m) {
             var data = m.getMessage();
@@ -287,26 +295,6 @@ Ext.onReady(function() {
                    console.log("ERROR: could not find layer for id: "+id);
                }
             }
-        });
-        MESSAGING.getInstance().registerHandler("highlight-layer",function(m) {
-            var data = JSON.parse(m.getMessage());
-           var layer = app.mapPanel.map.getLayer(data['layer']);
-           var duration = data['duration'];
-           if( layer != null ) {
-               var ctrl = Ext.getCmp("layer_menu_" + data['layer']);
-               if( !ctrl.checked ) {
-                   ctrl.setChecked( true );
-               }
-               var zoom = app.mapPanel.map.getZoomForExtent(layer.maxExtent, true) + data['relativeZoom'];
-               app.mapPanel.map.setCenter(layer.maxExtent.getCenterLonLat(), zoom);
-               if( duration != undefined && duration > 0 ) {
-                   setTimeout( function() {
-                       ctrl.setChecked( false );
-                   },duration);
-               }
-           } else {
-               console.log("ERROR: could not find layer for id: "+id);
-           }
         });
 
         var markerControl = new CLICK_CONTROL();
@@ -384,6 +372,27 @@ Ext.onReady(function() {
                 polygonLayer.redraw();
             },3000);
 
+        });
+
+        MESSAGING.getInstance().registerHandler("highlight-layer",function(m) {
+            var data = JSON.parse(m.getMessage());
+           var layer = app.mapPanel.map.getLayer(data['layer']);
+           var duration = data['duration'];
+           if( layer != null ) {
+               var ctrl = Ext.getCmp("layer_menu_" + data['layer']);
+               if( !ctrl.checked ) {
+                   ctrl.setChecked( true );
+               }
+               var zoom = app.mapPanel.map.getZoomForExtent(layer.maxExtent, true) + data['relativeZoom'];
+               app.mapPanel.map.setCenter(layer.maxExtent.getCenterLonLat(), zoom);
+               if( duration != undefined && duration > 0 ) {
+                   setTimeout( function() {
+                       ctrl.setChecked( false );
+                   },duration);
+               }
+           } else {
+               console.log("ERROR: could not find layer for id: "+id);
+           }
         });
 
         MESSAGING.getInstance().registerHandler("highlight-geometry", function(e) {
@@ -471,6 +480,8 @@ Ext.onReady(function() {
         });
 
         MESSAGING.getInstance().send(new Message("portalReady", {}));
+
+        //**************************************** END - XBLOCK RELATED CODE ****************************************
     });
 
 
