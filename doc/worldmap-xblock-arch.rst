@@ -21,11 +21,8 @@ There are only 2 restrictions with this architecture:
 
 1. If the master page is running off an *http* server, the slave page (ie: worldmap) must also be served on an *http* server (likewise with https).  This is a restriction imposed by the basic javascript sandbox security rules.
 2. The data contained in the message payload must not have pointers to protected resources - like the browser's sandbox resources etc.
-
-Since a single edX "page" may host more than one worldmap IFrames, it was important that the messaging system be set up so that
-each worldmap can be addressed uniquely.  Hence with the xBlockCom-master.js, all communications require a uniqueId that
-distinguishes one worldmap from another (we use the XBlock's unique value for *scope_ids.usage_id* to disambiguate between
-multiple worldmap frames.
+3. Since a single edX "page" may host more than one worldmap IFrames, each slave instance must be addressed uniquely.  Hence with the xBlockCom-master.js, all communications require a uniqueId that
+distinguishes one slave instance from another (we use the XBlock's unique value for *scope_ids.usage_id* to disambiguate between multiple IFrames.
 
 .. figure:: images/worldmap-xblock-basic-layout.png
    :scale: 60

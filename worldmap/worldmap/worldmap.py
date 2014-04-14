@@ -131,7 +131,7 @@ class WorldMapXBlock(XBlock):
         except:
             pass
 
-        self.href = self.href + delimiter + "xblockId=worldmap_" + self.scope_ids.usage_id
+        self.url = self.href + delimiter + "xblockId=worldmap_" + self.scope_ids.usage_id
 
         html = self.resource_string("static/html/worldmap.html")
 

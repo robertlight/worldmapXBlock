@@ -126,3 +126,8 @@
 ul.dynatree-container {
     border: none
 }
+
+.debugInfo {
+   width:600px;
+   height: 54px;
+}
