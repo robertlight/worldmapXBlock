@@ -18,6 +18,7 @@
 </script>
 
 <script type="text/javascript">
+
 var app;
 
 
@@ -160,7 +161,7 @@ Ext.onReady(function() {
 
     //********************************************* XBLOCK RELATED CODE ********************************************
     //useful for debugging...
-    MESSAGING.getInstance().registerHandler("info", function(m) { alert("the slave code received this 'info' message: "+m.getMessage()); });
+    MESSAGING.getInstance().registerHandler("info", function(m) { alert("INFO: the slave code received this 'info' message: "+m.getMessage()); });
 
     app.on("ready", function() {
 
@@ -303,6 +304,9 @@ Ext.onReady(function() {
         app.mapPanel.map.addControl(polylineControl);
 
         MESSAGING.getInstance().registerHandler("reset-answer-tool", function(m) {
+           var id = app.mapPanel.map.id+"_OpenLayers_ViewPort";
+           console.log("reset-answer-tool for: "+id);
+           document.getElementById(id).style.cursor = "default";
            markerControl.deactivate();
            polygonControl.deactivate();
            polylineControl.deactivate();
@@ -310,10 +314,14 @@ Ext.onReady(function() {
         });
 
         MESSAGING.getInstance().registerHandler("set-answer-tool", function(e) {
+
             var message = JSON.parse(e.message);
             currentAnswer = message;
+
+            //TODO: fix url - make relative
+            document.getElementById(app.mapPanel.map.id+"_OpenLayers_ViewPort").style.cursor = "url(http://robertlight.com/tmp/"+currentAnswer.type+"Cursor.png) 16 16, auto";
             if( currentAnswer.type == 'point' ) {
-               Ext.example.msg("Info","Click the map at the location requested");
+               Ext.example.msg("Info",{% trans 'Click the map at the location requested' %} );
                markerControl.activate();
             } else if( currentAnswer.type == 'polygon' ) {
                // window.alert("color="+currentAnswer.color);
@@ -321,12 +329,13 @@ Ext.onReady(function() {
                         fillColor: '#'+currentAnswer.color,
                         fillOpacity: 0.3
                     });
-                Ext.example.msg("Info","Please click on the boundaries of a polygon.<br/>Double-click to end drawing.");  //TODO:  I18n
+                Ext.example.msg("Info",{%  trans "Please click on the boundaries of a polygon.<br/>Double-click to end drawing." %});
                 polygonControl.activate();
             } else if( currentAnswer.type == 'polyline' ) {
-                Ext.example.msg("Info","Please click on the verticies of a polyline.<br/>Double-click to end drawing.");  //TODO:  I18n
+                Ext.example.msg("Info",{%  trans "Please click on the verticies of a polyline.<br/>Double-click to end drawing." %});
                 polylineControl.activate();
             }
+
         });
 
         MESSAGING.getInstance().registerHandler("flash-polygon", function(e) {
@@ -460,9 +469,7 @@ Ext.onReady(function() {
                 var bounds = line.getBounds();
                 var feature = new OpenLayers.Feature.Vector( line, {}, { strokeColor: '#FF0000', strokeWidth: 4, strokeOpacity: 1.0});
                 feature.state = OpenLayers.State.INSERT;
-                bounds = line.getBounds();
                 features.push(feature);
-                var center = line.getCentroid();
                 app.mapPanel.map.setCenter(
                         [center.x, center.y],
                         Math.min(15, relativeZoom + app.mapPanel.map.getZoomForExtent( bounds, false))
